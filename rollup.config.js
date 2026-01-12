@@ -7,6 +7,8 @@ const packageJson = JSON.parse(
   fs.readFileSync(new URL("./package.json", import.meta.url), "utf-8")
 );
 
+console.log(packageJson.version);
+
 export default {
   input: "src/uk-rail-card.ts",
   output: {
@@ -20,8 +22,7 @@ export default {
     replace({
       preventAssignment: true,
       values: {
-        // __VERSION__: JSON.stringify(packageJson.version),
-        __VERSION__: "1.1.1",
+        __VERSION__: () => JSON.stringify(packageJson.version),
       },
     }),
   ],
