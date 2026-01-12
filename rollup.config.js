@@ -17,11 +17,12 @@ export default {
   plugins: [
     typescript({ tsconfig: "./tsconfig.json" }),
     resolve(),
-    // replace({
-    //   preventAssignment: true,
-    //   values: {
-    //     __VERSION__: JSON.stringify(packageJson.version),
-    //   },
-    // }),
+    replace({
+      preventAssignment: true,
+      values: {
+        // __VERSION__: JSON.stringify(packageJson.version),
+        __VERSION__: "1.1.1",
+      },
+    }),
   ],
 };
