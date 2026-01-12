@@ -7,8 +7,6 @@ const packageJson = JSON.parse(
   fs.readFileSync(new URL("./package.json", import.meta.url), "utf-8")
 );
 
-console.log(packageJson.version);
-
 export default {
   input: "src/uk-rail-card.ts",
   output: {
