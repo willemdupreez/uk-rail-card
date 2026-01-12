@@ -3,7 +3,7 @@ class UkRailCard extends HTMLElement {
     constructor() {
         super();
         this.attachShadow({ mode: "open" });
-        console.log("...::: UK RAIL CARD :::...");
+        console.log("...:::[[[ UK RAIL CARD ]]]:::...");
     }
     static getStubConfig() {
         return {

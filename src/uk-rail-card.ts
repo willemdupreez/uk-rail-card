@@ -18,7 +18,7 @@ class UkRailCard extends HTMLElement {
   constructor() {
     super();
     this.attachShadow({ mode: "open" });
-    console.log("...::: UK RAIL CARD :::...");
+    console.log("...:::[[[ UK RAIL CARD ]]]:::...");
   }
 
   static getStubConfig(): RailCardConfig {
@@ -292,7 +292,10 @@ class UkRailCardEditor extends HTMLElement {
       }
 
       field.addEventListener("input", (event) => {
-        const target = event.target as { value?: string; dataset?: DOMStringMap };
+        const target = event.target as {
+          value?: string;
+          dataset?: DOMStringMap;
+        };
         const key = target.dataset?.field as keyof RailCardConfig | undefined;
         const value = target.value ?? "";
 
