@@ -47,3 +47,9 @@ If a `destination` value is blank, the card stops rendering further rows.
 npm install
 npm run build
 ```
+
+To bump the version and build in one step:
+
+```bash
+./bin/bump-version-build.sh [patch|minor|major]
+```
