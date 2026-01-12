@@ -5,7 +5,10 @@ interface RailCardConfig {
 }
 
 type HomeAssistant = {
-  states: Record<string, { state: string; attributes: Record<string, unknown> }>;
+  states: Record<
+    string,
+    { state: string; attributes: Record<string, unknown> }
+  >;
 };
 
 class UkRailCard extends HTMLElement {
@@ -18,7 +21,11 @@ class UkRailCard extends HTMLElement {
   }
 
   static getStubConfig(): RailCardConfig {
-    return { type: "custom:uk-rail-card", title: "Rail Services", device: "rail_station" };
+    return {
+      type: "custom:uk-rail-card",
+      title: "Rail Services",
+      device: "rail_station",
+    };
   }
 
   setConfig(config: RailCardConfig): void {
@@ -61,6 +68,8 @@ class UkRailCard extends HTMLElement {
     if (!this.shadowRoot || !this._config || !this._hass) {
       return;
     }
+
+    console.log("...::: UK RAIL CARD :::...");
 
     const deviceSuffix = this._config.device;
     const maxEntityId =
@@ -155,7 +164,11 @@ class UkRailCard extends HTMLElement {
         }
       </style>
       <ha-card>
-        ${title ? `<div class="header"><div class="title">${title}</div></div>` : ""}
+        ${
+          title
+            ? `<div class="header"><div class="title">${title}</div></div>`
+            : ""
+        }
         ${
           rows.length
             ? `
@@ -192,5 +205,6 @@ customElements.define("uk-rail-card", UkRailCard);
 (window as { customCards?: Array<Record<string, unknown>> }).customCards?.push({
   type: "uk-rail-card",
   name: "UK Rail Card",
-  description: "Displays upcoming rail services with scheduled and estimated times.",
+  description:
+    "Displays upcoming rail services with scheduled and estimated times.",
 });

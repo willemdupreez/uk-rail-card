@@ -5,7 +5,11 @@ class UkRailCard extends HTMLElement {
         this.attachShadow({ mode: "open" });
     }
     static getStubConfig() {
-        return { type: "custom:uk-rail-card", title: "Rail Services", device: "rail_station" };
+        return {
+            type: "custom:uk-rail-card",
+            title: "Rail Services",
+            device: "rail_station",
+        };
     }
     setConfig(config) {
         if (!config.device) {
@@ -39,6 +43,7 @@ class UkRailCard extends HTMLElement {
         if (!this.shadowRoot || !this._config || !this._hass) {
             return;
         }
+        console.log("...::: UK RAIL CARD :::...");
         const deviceSuffix = this._config.device;
         const maxEntityId = this.findEntityId(`${deviceSuffix}_max_services`) ||
             this.findEntityId("max_services");
@@ -117,7 +122,9 @@ class UkRailCard extends HTMLElement {
         }
       </style>
       <ha-card>
-        ${title ? `<div class="header"><div class="title">${title}</div></div>` : ""}
+        ${title
+            ? `<div class="header"><div class="title">${title}</div></div>`
+            : ""}
         ${rows.length
             ? `
               <div class="table">
