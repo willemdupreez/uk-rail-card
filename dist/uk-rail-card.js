@@ -3,6 +3,7 @@ class UkRailCard extends HTMLElement {
     constructor() {
         super();
         this.attachShadow({ mode: "open" });
+        console.log("...::: UK RAIL CARD :::...");
     }
     static getStubConfig() {
         return {
@@ -10,6 +11,9 @@ class UkRailCard extends HTMLElement {
             title: "Rail Services",
             device: "rail_station",
         };
+    }
+    static getConfigElement() {
+        return document.createElement("uk-rail-card-editor");
     }
     setConfig(config) {
         if (!config.device) {
@@ -43,7 +47,6 @@ class UkRailCard extends HTMLElement {
         if (!this.shadowRoot || !this._config || !this._hass) {
             return;
         }
-        console.log("...::: UK RAIL CARD :::...");
         const deviceSuffix = this._config.device;
         const maxEntityId = this.findEntityId(`${deviceSuffix}_max_services`) ||
             this.findEntityId("max_services");
@@ -147,7 +150,100 @@ class UkRailCard extends HTMLElement {
     `;
     }
 }
+class UkRailCardEditor extends HTMLElement {
+    constructor() {
+        super();
+        this.attachShadow({ mode: "open" });
+    }
+    setConfig(config) {
+        this._config = { ...config };
+        this.render();
+    }
+    set hass(hass) {
+        this._hass = hass;
+        this.render();
+    }
+    updateConfigValue(key, value) {
+        if (!this._config) {
+            return;
+        }
+        const nextConfig = { ...this._config };
+        const trimmed = value.trim();
+        if (key === "title") {
+            if (trimmed) {
+                nextConfig.title = trimmed;
+            }
+            else {
+                delete nextConfig.title;
+            }
+        }
+        else if (key === "device") {
+            nextConfig.device = trimmed;
+        }
+        else {
+            nextConfig[key] = value;
+        }
+        this._config = nextConfig;
+        this.dispatchEvent(new CustomEvent("config-changed", {
+            detail: { config: nextConfig },
+            bubbles: true,
+            composed: true,
+        }));
+    }
+    render() {
+        if (!this.shadowRoot) {
+            return;
+        }
+        this.shadowRoot.innerHTML = `
+      <style>
+        :host {
+          display: block;
+          padding: 8px 0;
+        }
+
+        .form {
+          display: grid;
+          gap: 16px;
+        }
+      </style>
+      <div class="form">
+        <ha-textfield
+          label="Title (optional)"
+          data-field="title"
+        ></ha-textfield>
+        <ha-textfield
+          label="Device suffix"
+          helper="Matches entities ending in \${device}_max_services, \${device}_1_destination, etc."
+          persistent-helper
+          data-field="device"
+        ></ha-textfield>
+      </div>
+    `;
+        this.shadowRoot.querySelectorAll("ha-textfield").forEach((field) => {
+            var _a, _b, _c, _d, _e;
+            const input = field;
+            const key = (_a = input.dataset) === null || _a === void 0 ? void 0 : _a.field;
+            if (key === "title") {
+                input.value = (_c = (_b = this._config) === null || _b === void 0 ? void 0 : _b.title) !== null && _c !== void 0 ? _c : "";
+            }
+            if (key === "device") {
+                input.value = (_e = (_d = this._config) === null || _d === void 0 ? void 0 : _d.device) !== null && _e !== void 0 ? _e : "";
+            }
+            field.addEventListener("input", (event) => {
+                var _a, _b;
+                const target = event.target;
+                const key = (_a = target.dataset) === null || _a === void 0 ? void 0 : _a.field;
+                const value = (_b = target.value) !== null && _b !== void 0 ? _b : "";
+                if (!key) {
+                    return;
+                }
+                this.updateConfigValue(key, value);
+            });
+        });
+    }
+}
 customElements.define("uk-rail-card", UkRailCard);
+customElements.define("uk-rail-card-editor", UkRailCardEditor);
 window.customCards =
     window.customCards ||
         [];

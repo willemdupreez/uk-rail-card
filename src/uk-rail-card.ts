@@ -18,6 +18,7 @@ class UkRailCard extends HTMLElement {
   constructor() {
     super();
     this.attachShadow({ mode: "open" });
+    console.log("...::: UK RAIL CARD :::...");
   }
 
   static getStubConfig(): RailCardConfig {
@@ -26,6 +27,10 @@ class UkRailCard extends HTMLElement {
       title: "Rail Services",
       device: "rail_station",
     };
+  }
+
+  static getConfigElement(): HTMLElement {
+    return document.createElement("uk-rail-card-editor");
   }
 
   setConfig(config: RailCardConfig): void {
@@ -68,8 +73,6 @@ class UkRailCard extends HTMLElement {
     if (!this.shadowRoot || !this._config || !this._hass) {
       return;
     }
-
-    console.log("...::: UK RAIL CARD :::...");
 
     const deviceSuffix = this._config.device;
     const maxEntityId =
@@ -196,7 +199,115 @@ class UkRailCard extends HTMLElement {
   }
 }
 
+class UkRailCardEditor extends HTMLElement {
+  private _config?: RailCardConfig;
+  private _hass?: HomeAssistant;
+
+  constructor() {
+    super();
+    this.attachShadow({ mode: "open" });
+  }
+
+  setConfig(config: RailCardConfig): void {
+    this._config = { ...config };
+    this.render();
+  }
+
+  set hass(hass: HomeAssistant) {
+    this._hass = hass;
+    this.render();
+  }
+
+  private updateConfigValue(key: keyof RailCardConfig, value: string): void {
+    if (!this._config) {
+      return;
+    }
+
+    const nextConfig: RailCardConfig = { ...this._config };
+    const trimmed = value.trim();
+
+    if (key === "title") {
+      if (trimmed) {
+        nextConfig.title = trimmed;
+      } else {
+        delete nextConfig.title;
+      }
+    } else if (key === "device") {
+      nextConfig.device = trimmed;
+    } else {
+      nextConfig[key] = value;
+    }
+
+    this._config = nextConfig;
+    this.dispatchEvent(
+      new CustomEvent("config-changed", {
+        detail: { config: nextConfig },
+        bubbles: true,
+        composed: true,
+      })
+    );
+  }
+
+  private render(): void {
+    if (!this.shadowRoot) {
+      return;
+    }
+
+    this.shadowRoot.innerHTML = `
+      <style>
+        :host {
+          display: block;
+          padding: 8px 0;
+        }
+
+        .form {
+          display: grid;
+          gap: 16px;
+        }
+      </style>
+      <div class="form">
+        <ha-textfield
+          label="Title (optional)"
+          data-field="title"
+        ></ha-textfield>
+        <ha-textfield
+          label="Device suffix"
+          helper="Matches entities ending in \${device}_max_services, \${device}_1_destination, etc."
+          persistent-helper
+          data-field="device"
+        ></ha-textfield>
+      </div>
+    `;
+
+    this.shadowRoot.querySelectorAll("ha-textfield").forEach((field) => {
+      const input = field as { value?: string; dataset?: DOMStringMap };
+      const key = input.dataset?.field as keyof RailCardConfig | undefined;
+
+      if (key === "title") {
+        input.value = this._config?.title ?? "";
+      }
+
+      if (key === "device") {
+        input.value = this._config?.device ?? "";
+      }
+
+      field.addEventListener("input", (event) => {
+        const target = event.target as { value?: string; dataset?: DOMStringMap };
+        const key = target.dataset?.field as keyof RailCardConfig | undefined;
+        const value = target.value ?? "";
+
+        if (!key) {
+          return;
+        }
+
+        this.updateConfigValue(key, value);
+      });
+    });
+  }
+}
+
 customElements.define("uk-rail-card", UkRailCard);
+customElements.define("uk-rail-card-editor", UkRailCardEditor);
 
 (window as { customCards?: Array<Record<string, unknown>> }).customCards =
   (window as { customCards?: Array<Record<string, unknown>> }).customCards ||
