@@ -11,7 +11,7 @@ type HomeAssistant = {
   >;
 };
 
-const version = "v__VERSION__";
+const version = __VERSION__;
 
 console.info(
   "%c UK-RAIL-CARD %c ".concat(version, " "),
