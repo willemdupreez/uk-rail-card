@@ -1,5 +1,11 @@
 import resolve from "@rollup/plugin-node-resolve";
+import replace from "@rollup/plugin-replace";
 import typescript from "@rollup/plugin-typescript";
+import fs from "node:fs";
+
+const packageJson = JSON.parse(
+  fs.readFileSync(new URL("./package.json", import.meta.url), "utf-8")
+);
 
 export default {
   input: "src/uk-rail-card.ts",
@@ -8,5 +14,14 @@ export default {
     format: "es",
     sourcemap: true,
   },
-  plugins: [resolve(), typescript({ tsconfig: "./tsconfig.json" })],
+  plugins: [
+    typescript({ tsconfig: "./tsconfig.json" }),
+    resolve(),
+    // replace({
+    //   preventAssignment: true,
+    //   values: {
+    //     __VERSION__: JSON.stringify(packageJson.version),
+    //   },
+    // }),
+  ],
 };

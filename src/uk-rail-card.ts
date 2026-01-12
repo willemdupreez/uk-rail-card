@@ -11,6 +11,14 @@ type HomeAssistant = {
   >;
 };
 
+const version = "__VERSION__";
+
+console.info(
+  "%c UK-RAIL-CARD %c ".concat(version, " "),
+  "color: white; background: navy; font-weight: 700;",
+  "color: navy; background: white; font-weight: 700;"
+);
+
 class UkRailCard extends HTMLElement {
   private _config?: RailCardConfig;
   private _hass?: HomeAssistant;
@@ -18,7 +26,6 @@ class UkRailCard extends HTMLElement {
   constructor() {
     super();
     this.attachShadow({ mode: "open" });
-    console.log("...:::[[[ UK RAIL CARD ]]]:::...");
   }
 
   static getStubConfig(): RailCardConfig {

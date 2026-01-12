@@ -1,6 +1,6 @@
 {
   "name": "uk-rail-card",
-  "version": "0.2.3",
+  "version": "0.2.10",
   "description": "Custom Lovelace card for UK rail service boards.",
   "license": "MIT",
   "type": "module",
@@ -11,6 +11,7 @@
   },
   "devDependencies": {
     "@rollup/plugin-node-resolve": "^15.2.3",
+    "@rollup/plugin-replace": "^5.0.5",
     "@rollup/plugin-typescript": "^11.1.6",
     "rollup": "^4.21.0",
     "tslib": "^2.6.3",
