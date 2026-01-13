@@ -1,5 +1,5 @@
 var _a;
-const version = '0.2.25';
+const version = '0.2.26';
 console.info('%c UK-RAIL-CARD %c v'.concat(version, ' '), 'color: white; background: navy; font-weight: 700;', 'color: navy; background: white; font-weight: 700;');
 class UkRailCard extends HTMLElement {
     constructor() {
@@ -154,6 +154,8 @@ class UkRailCard extends HTMLElement {
 class UkRailCardEditor extends HTMLElement {
     constructor() {
         super();
+        this._devicesLoaded = false;
+        this._entitiesLoaded = false;
         this.attachShadow({ mode: 'open' });
     }
     setConfig(config) {
@@ -162,6 +164,8 @@ class UkRailCardEditor extends HTMLElement {
     }
     set hass(hass) {
         this._hass = hass;
+        void this.loadDevices();
+        void this.loadEntities();
         this.render();
     }
     updateConfigValue(key, value) {
@@ -181,12 +185,12 @@ class UkRailCardEditor extends HTMLElement {
         else if (key === 'device') {
             nextConfig.device = trimmed;
         }
-        else if (key === 'device_entity') {
+        else if (key === 'device_id') {
             if (trimmed) {
-                nextConfig.device_entity = trimmed;
+                nextConfig.device_id = trimmed;
             }
             else {
-                delete nextConfig.device_entity;
+                delete nextConfig.device_id;
             }
         }
         else {
@@ -198,6 +202,44 @@ class UkRailCardEditor extends HTMLElement {
             bubbles: true,
             composed: true,
         }));
+    }
+    async loadDevices() {
+        var _a;
+        if (this._devicesLoaded || !((_a = this._hass) === null || _a === void 0 ? void 0 : _a.callWS)) {
+            return;
+        }
+        this._devicesLoaded = true;
+        try {
+            const devices = await this._hass.callWS({
+                type: 'config/device_registry/list',
+            });
+            this._devices = devices.filter((device) => {
+                var _a, _b;
+                const manufacturer = ((_a = device.manufacturer) !== null && _a !== void 0 ? _a : '').toLowerCase();
+                const model = ((_b = device.model) !== null && _b !== void 0 ? _b : '').toLowerCase();
+                return manufacturer === 'rail2mqtt' && model === 'departure board';
+            });
+        }
+        catch {
+            this._devices = [];
+        }
+        this.render();
+    }
+    async loadEntities() {
+        var _a;
+        if (this._entitiesLoaded || !((_a = this._hass) === null || _a === void 0 ? void 0 : _a.callWS)) {
+            return;
+        }
+        this._entitiesLoaded = true;
+        try {
+            this._entities = await this._hass.callWS({
+                type: 'config/entity_registry/list',
+            });
+        }
+        catch {
+            this._entities = [];
+        }
+        this.render();
     }
     deriveDeviceSuffix(entityId) {
         var _a;
@@ -211,18 +253,37 @@ class UkRailCardEditor extends HTMLElement {
         }
         return entityName;
     }
-    updateDeviceFromEntity(entityId) {
+    pickEntityIdForDevice(deviceId) {
+        var _a;
+        const entities = ((_a = this._entities) !== null && _a !== void 0 ? _a : []).filter((entity) => entity.device_id === deviceId);
+        const entityIds = entities.map((entity) => entity.entity_id);
+        const maxServices = entityIds.find((entityId) => { var _a; return ((_a = entityId.split('.')[1]) !== null && _a !== void 0 ? _a : '').endsWith('_max_services'); });
+        if (maxServices) {
+            return maxServices;
+        }
+        const matching = entityIds.find((entityId) => {
+            var _a;
+            return /^(.*)_\d+_(scheduled_time|destination|estimated_time)$/.test((_a = entityId.split('.')[1]) !== null && _a !== void 0 ? _a : '');
+        });
+        return matching !== null && matching !== void 0 ? matching : entityIds[0];
+    }
+    updateDeviceFromDevice(deviceId) {
         if (!this._config) {
             return;
         }
-        const trimmed = entityId.trim();
+        const trimmed = deviceId.trim();
+        if (trimmed && !this._entitiesLoaded) {
+            void this.loadEntities().then(() => this.updateDeviceFromDevice(trimmed));
+            return;
+        }
         const nextConfig = { ...this._config };
         if (trimmed) {
-            nextConfig.device_entity = trimmed;
-            nextConfig.device = this.deriveDeviceSuffix(trimmed);
+            nextConfig.device_id = trimmed;
+            const entityId = this.pickEntityIdForDevice(trimmed);
+            nextConfig.device = entityId ? this.deriveDeviceSuffix(entityId) : '';
         }
         else {
-            delete nextConfig.device_entity;
+            delete nextConfig.device_id;
             nextConfig.device = '';
         }
         this._config = nextConfig;
@@ -254,12 +315,12 @@ class UkRailCardEditor extends HTMLElement {
           label="Title (optional)"
           data-field="title"
         ></ha-textfield>
-        <ha-entity-picker
-          label="Device entity"
-          helper="Select any rail entity; the device suffix is derived automatically."
+        <ha-device-picker
+          label="Device"
+          helper="Select a rail2mqtt Departure Board device."
           persistent-helper
-          data-field="device_entity"
-        ></ha-entity-picker>
+          data-field="device_id"
+        ></ha-device-picker>
       </div>
     `;
         this.shadowRoot.querySelectorAll('ha-textfield').forEach((field) => {
@@ -280,14 +341,15 @@ class UkRailCardEditor extends HTMLElement {
                 this.updateConfigValue(key, value);
             });
         });
-        const picker = this.shadowRoot.querySelector('ha-entity-picker');
+        const picker = this.shadowRoot.querySelector('ha-device-picker');
         if (picker) {
             picker.hass = this._hass;
-            picker.value = (_b = (_a = this._config) === null || _a === void 0 ? void 0 : _a.device_entity) !== null && _b !== void 0 ? _b : '';
+            picker.devices = this._devices;
+            picker.value = (_b = (_a = this._config) === null || _a === void 0 ? void 0 : _a.device_id) !== null && _b !== void 0 ? _b : '';
             picker.addEventListener('value-changed', (event) => {
                 var _a;
                 const detail = event.detail;
-                this.updateDeviceFromEntity((_a = detail.value) !== null && _a !== void 0 ? _a : '');
+                this.updateDeviceFromDevice((_a = detail.value) !== null && _a !== void 0 ? _a : '');
             });
         }
     }

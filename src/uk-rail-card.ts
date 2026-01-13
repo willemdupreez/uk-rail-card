@@ -2,7 +2,7 @@ interface RailCardConfig {
   type: string;
   title?: string;
   device: string;
-  device_entity?: string;
+  device_id?: string;
 }
 
 type HomeAssistant = {
@@ -10,6 +10,20 @@ type HomeAssistant = {
     string,
     { state: string; attributes: Record<string, unknown> }
   >;
+  callWS?: <T>(message: Record<string, unknown>) => Promise<T>;
+};
+
+type DeviceRegistryEntry = {
+  id: string;
+  manufacturer?: string | null;
+  model?: string | null;
+  name?: string | null;
+  name_by_user?: string | null;
+};
+
+type EntityRegistryEntry = {
+  entity_id: string;
+  device_id?: string | null;
 };
 
 const version = '__VERSION__';
@@ -210,6 +224,10 @@ class UkRailCard extends HTMLElement {
 class UkRailCardEditor extends HTMLElement {
   private _config?: RailCardConfig;
   private _hass?: HomeAssistant;
+  private _devices?: DeviceRegistryEntry[];
+  private _entities?: EntityRegistryEntry[];
+  private _devicesLoaded = false;
+  private _entitiesLoaded = false;
 
   constructor() {
     super();
@@ -223,6 +241,8 @@ class UkRailCardEditor extends HTMLElement {
 
   set hass(hass: HomeAssistant) {
     this._hass = hass;
+    void this.loadDevices();
+    void this.loadEntities();
     this.render();
   }
 
@@ -242,11 +262,11 @@ class UkRailCardEditor extends HTMLElement {
       }
     } else if (key === 'device') {
       nextConfig.device = trimmed;
-    } else if (key === 'device_entity') {
+    } else if (key === 'device_id') {
       if (trimmed) {
-        nextConfig.device_entity = trimmed;
+        nextConfig.device_id = trimmed;
       } else {
-        delete nextConfig.device_entity;
+        delete nextConfig.device_id;
       }
     } else {
       nextConfig[key] = value;
@@ -260,6 +280,49 @@ class UkRailCardEditor extends HTMLElement {
         composed: true,
       })
     );
+  }
+
+  private async loadDevices(): Promise<void> {
+    if (this._devicesLoaded || !this._hass?.callWS) {
+      return;
+    }
+
+    this._devicesLoaded = true;
+
+    try {
+      const devices = await this._hass.callWS<DeviceRegistryEntry[]>({
+        type: 'config/device_registry/list',
+      });
+
+      this._devices = devices.filter((device) => {
+        const manufacturer = (device.manufacturer ?? '').toLowerCase();
+        const model = (device.model ?? '').toLowerCase();
+
+        return manufacturer === 'rail2mqtt' && model === 'departure board';
+      });
+    } catch {
+      this._devices = [];
+    }
+
+    this.render();
+  }
+
+  private async loadEntities(): Promise<void> {
+    if (this._entitiesLoaded || !this._hass?.callWS) {
+      return;
+    }
+
+    this._entitiesLoaded = true;
+
+    try {
+      this._entities = await this._hass.callWS<EntityRegistryEntry[]>({
+        type: 'config/entity_registry/list',
+      });
+    } catch {
+      this._entities = [];
+    }
+
+    this.render();
   }
 
   private deriveDeviceSuffix(entityId: string): string {
@@ -280,19 +343,49 @@ class UkRailCardEditor extends HTMLElement {
     return entityName;
   }
 
-  private updateDeviceFromEntity(entityId: string): void {
+  private pickEntityIdForDevice(deviceId: string): string | undefined {
+    const entities = (this._entities ?? []).filter(
+      (entity) => entity.device_id === deviceId
+    );
+    const entityIds = entities.map((entity) => entity.entity_id);
+
+    const maxServices = entityIds.find((entityId) =>
+      (entityId.split('.')[1] ?? '').endsWith('_max_services')
+    );
+
+    if (maxServices) {
+      return maxServices;
+    }
+
+    const matching = entityIds.find((entityId) =>
+      /^(.*)_\d+_(scheduled_time|destination|estimated_time)$/.test(
+        entityId.split('.')[1] ?? ''
+      )
+    );
+
+    return matching ?? entityIds[0];
+  }
+
+  private updateDeviceFromDevice(deviceId: string): void {
     if (!this._config) {
       return;
     }
 
-    const trimmed = entityId.trim();
+    const trimmed = deviceId.trim();
+
+    if (trimmed && !this._entitiesLoaded) {
+      void this.loadEntities().then(() => this.updateDeviceFromDevice(trimmed));
+      return;
+    }
+
     const nextConfig: RailCardConfig = { ...this._config };
 
     if (trimmed) {
-      nextConfig.device_entity = trimmed;
-      nextConfig.device = this.deriveDeviceSuffix(trimmed);
+      nextConfig.device_id = trimmed;
+      const entityId = this.pickEntityIdForDevice(trimmed);
+      nextConfig.device = entityId ? this.deriveDeviceSuffix(entityId) : '';
     } else {
-      delete nextConfig.device_entity;
+      delete nextConfig.device_id;
       nextConfig.device = '';
     }
 
@@ -328,12 +421,12 @@ class UkRailCardEditor extends HTMLElement {
           label="Title (optional)"
           data-field="title"
         ></ha-textfield>
-        <ha-entity-picker
-          label="Device entity"
-          helper="Select any rail entity; the device suffix is derived automatically."
+        <ha-device-picker
+          label="Device"
+          helper="Select a rail2mqtt Departure Board device."
           persistent-helper
-          data-field="device_entity"
-        ></ha-entity-picker>
+          data-field="device_id"
+        ></ha-device-picker>
       </div>
     `;
 
@@ -361,16 +454,21 @@ class UkRailCardEditor extends HTMLElement {
       });
     });
 
-    const picker = this.shadowRoot.querySelector('ha-entity-picker') as
-      | (HTMLElement & { hass?: HomeAssistant; value?: string })
+    const picker = this.shadowRoot.querySelector('ha-device-picker') as
+      | (HTMLElement & {
+          hass?: HomeAssistant;
+          value?: string;
+          devices?: DeviceRegistryEntry[];
+        })
       | null;
 
     if (picker) {
       picker.hass = this._hass;
-      picker.value = this._config?.device_entity ?? '';
+      picker.devices = this._devices;
+      picker.value = this._config?.device_id ?? '';
       picker.addEventListener('value-changed', (event) => {
         const detail = (event as CustomEvent).detail as { value?: string };
-        this.updateDeviceFromEntity(detail.value ?? '');
+        this.updateDeviceFromDevice(detail.value ?? '');
       });
     }
   }
