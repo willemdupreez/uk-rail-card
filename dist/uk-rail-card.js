@@ -1,5 +1,5 @@
 var _a;
-const version = '0.2.37';
+const version = '0.2.38';
 console.info('%c UK-RAIL-CARD %c v'.concat(version, ' '), 'color: white; background: navy; font-weight: 700;', 'color: navy; background: white; font-weight: 700;');
 class UkRailCard extends HTMLElement {
     constructor() {
@@ -211,6 +211,7 @@ class UkRailCard extends HTMLElement {
           font-size: 0.8rem;
           color: var(--secondary-text-color);
           white-space: nowrap;
+          margin-left: -30px;
         }
       </style>
       <ha-card>

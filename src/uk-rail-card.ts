@@ -296,6 +296,7 @@ class UkRailCard extends HTMLElement {
           font-size: 0.8rem;
           color: var(--secondary-text-color);
           white-space: nowrap;
+          margin-left: -30px;
         }
       </style>
       <ha-card>
