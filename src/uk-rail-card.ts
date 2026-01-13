@@ -18,6 +18,12 @@ type EntityRegistryEntry = {
   device_id?: string | null;
 };
 
+type DeviceRegistryEntry = {
+  id: string;
+  name?: string | null;
+  name_by_user?: string | null;
+};
+
 const version = '__VERSION__';
 
 console.info(
@@ -31,6 +37,8 @@ class UkRailCard extends HTMLElement {
   private _hass?: HomeAssistant;
   private _entityRegistry?: EntityRegistryEntry[];
   private _entityRegistryLoaded = false;
+  private _deviceRegistry?: DeviceRegistryEntry[];
+  private _deviceRegistryLoaded = false;
 
   constructor() {
     super();
@@ -56,12 +64,14 @@ class UkRailCard extends HTMLElement {
 
     this._config = config;
     void this.loadEntityRegistry();
+    void this.loadDeviceRegistry();
     this.render();
   }
 
   set hass(hass: HomeAssistant) {
     this._hass = hass;
     void this.loadEntityRegistry();
+    void this.loadDeviceRegistry();
     this.render();
   }
 
@@ -91,6 +101,51 @@ class UkRailCard extends HTMLElement {
     this.render();
   }
 
+  private async loadDeviceRegistry(): Promise<void> {
+    if (
+      this._deviceRegistryLoaded ||
+      !this._hass?.callWS ||
+      !this._config?.device_id
+    ) {
+      return;
+    }
+
+    this._deviceRegistryLoaded = true;
+
+    try {
+      this._deviceRegistry = await this._hass.callWS<DeviceRegistryEntry[]>({
+        type: 'config/device_registry/list',
+      });
+    } catch {
+      this._deviceRegistry = [];
+    }
+
+    this.render();
+  }
+
+  private getDeviceName(): string | undefined {
+    const deviceId = this._config?.device_id;
+
+    if (!deviceId) {
+      return undefined;
+    }
+
+    if (!this._deviceRegistryLoaded) {
+      void this.loadDeviceRegistry();
+      return undefined;
+    }
+
+    const device = (this._deviceRegistry ?? []).find(
+      (entry) => entry.id === deviceId
+    );
+    const name = device?.name_by_user || device?.name || '';
+
+    if (!name) {
+      return undefined;
+    }
+
+    return name.replace(/^Rail departure board:\s*/i, '').trim();
+  }
   private findEntityId(suffix: string): string | undefined {
     if (!this._hass) {
       return undefined;
@@ -177,7 +232,7 @@ class UkRailCard extends HTMLElement {
       });
     }
 
-    const title = this._config.title?.trim();
+    const title = this._config.title?.trim() || this.getDeviceName();
 
     this.shadowRoot.innerHTML = `
       <style>

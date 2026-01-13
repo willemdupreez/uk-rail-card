@@ -1,10 +1,11 @@
 var _a;
-const version = '0.2.35';
+const version = '0.2.36';
 console.info('%c UK-RAIL-CARD %c v'.concat(version, ' '), 'color: white; background: navy; font-weight: 700;', 'color: navy; background: white; font-weight: 700;');
 class UkRailCard extends HTMLElement {
     constructor() {
         super();
         this._entityRegistryLoaded = false;
+        this._deviceRegistryLoaded = false;
         this.attachShadow({ mode: 'open' });
     }
     static getStubConfig() {
@@ -23,11 +24,13 @@ class UkRailCard extends HTMLElement {
         }
         this._config = config;
         void this.loadEntityRegistry();
+        void this.loadDeviceRegistry();
         this.render();
     }
     set hass(hass) {
         this._hass = hass;
         void this.loadEntityRegistry();
+        void this.loadDeviceRegistry();
         this.render();
     }
     getCardSize() {
@@ -50,6 +53,41 @@ class UkRailCard extends HTMLElement {
             this._entityRegistry = [];
         }
         this.render();
+    }
+    async loadDeviceRegistry() {
+        var _a, _b;
+        if (this._deviceRegistryLoaded ||
+            !((_a = this._hass) === null || _a === void 0 ? void 0 : _a.callWS) ||
+            !((_b = this._config) === null || _b === void 0 ? void 0 : _b.device_id)) {
+            return;
+        }
+        this._deviceRegistryLoaded = true;
+        try {
+            this._deviceRegistry = await this._hass.callWS({
+                type: 'config/device_registry/list',
+            });
+        }
+        catch {
+            this._deviceRegistry = [];
+        }
+        this.render();
+    }
+    getDeviceName() {
+        var _a, _b;
+        const deviceId = (_a = this._config) === null || _a === void 0 ? void 0 : _a.device_id;
+        if (!deviceId) {
+            return undefined;
+        }
+        if (!this._deviceRegistryLoaded) {
+            void this.loadDeviceRegistry();
+            return undefined;
+        }
+        const device = ((_b = this._deviceRegistry) !== null && _b !== void 0 ? _b : []).find((entry) => entry.id === deviceId);
+        const name = (device === null || device === void 0 ? void 0 : device.name_by_user) || (device === null || device === void 0 ? void 0 : device.name) || '';
+        if (!name) {
+            return undefined;
+        }
+        return name.replace(/^Rail departure board:\s*/i, '').trim();
     }
     findEntityId(suffix) {
         var _a, _b;
@@ -110,7 +148,7 @@ class UkRailCard extends HTMLElement {
                 estimated: this.getEntityState(estimatedId) || '-',
             });
         }
-        const title = (_a = this._config.title) === null || _a === void 0 ? void 0 : _a.trim();
+        const title = ((_a = this._config.title) === null || _a === void 0 ? void 0 : _a.trim()) || this.getDeviceName();
         this.shadowRoot.innerHTML = `
       <style>
         :host {
