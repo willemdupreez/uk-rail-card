@@ -1,5 +1,5 @@
 var _a;
-const version = '0.2.32';
+const version = '0.2.33';
 console.info('%c UK-RAIL-CARD %c v'.concat(version, ' '), 'color: white; background: navy; font-weight: 700;', 'color: navy; background: white; font-weight: 700;');
 class UkRailCard extends HTMLElement {
     constructor() {
@@ -96,7 +96,6 @@ class UkRailCard extends HTMLElement {
         for (let index = 1; index <= maxServices; index += 1) {
             const destinationId = this.findEntityId(`${deviceSuffix}_${index}_destination`) ||
                 this.findEntityId(`${index}_destination`);
-            console.log(`Entity ID: ${destinationId}`);
             const destination = this.getEntityState(destinationId).trim();
             if (!destination) {
                 break;
@@ -232,19 +231,20 @@ class UkRailCardEditor extends HTMLElement {
             return;
         }
         const nextConfig = { ...this._config };
-        const trimmed = value.trim();
         if (key === 'title') {
-            if (trimmed) {
-                nextConfig.title = trimmed;
+            if (value) {
+                nextConfig.title = value;
             }
             else {
                 delete nextConfig.title;
             }
         }
         else if (key === 'device') {
+            const trimmed = value.trim();
             nextConfig.device = trimmed;
         }
         else if (key === 'device_id') {
+            const trimmed = value.trim();
             if (trimmed) {
                 nextConfig.device_id = trimmed;
             }

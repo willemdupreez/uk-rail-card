@@ -107,9 +107,7 @@ class UkRailCard extends HTMLElement {
       const deviceEntities = (this._entityRegistry ?? []).filter(
         (entity) => entity.device_id === this._config?.device_id
       );
-      const deviceEntityIds = deviceEntities.map(
-        (entity) => entity.entity_id
-      );
+      const deviceEntityIds = deviceEntities.map((entity) => entity.entity_id);
       const scopedIds = entityIds.filter((entityId) =>
         deviceEntityIds.includes(entityId)
       );
@@ -158,8 +156,6 @@ class UkRailCard extends HTMLElement {
       const destinationId =
         this.findEntityId(`${deviceSuffix}_${index}_destination`) ||
         this.findEntityId(`${index}_destination`);
-
-      console.log(`Entity ID: ${destinationId}`);
 
       const destination = this.getEntityState(destinationId).trim();
 
@@ -324,17 +320,17 @@ class UkRailCardEditor extends HTMLElement {
     }
 
     const nextConfig: RailCardConfig = { ...this._config };
-    const trimmed = value.trim();
-
     if (key === 'title') {
-      if (trimmed) {
-        nextConfig.title = trimmed;
+      if (value) {
+        nextConfig.title = value;
       } else {
         delete nextConfig.title;
       }
     } else if (key === 'device') {
+      const trimmed = value.trim();
       nextConfig.device = trimmed;
     } else if (key === 'device_id') {
+      const trimmed = value.trim();
       if (trimmed) {
         nextConfig.device_id = trimmed;
       } else {
