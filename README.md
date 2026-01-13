@@ -29,7 +29,7 @@ device: rail_station
 ### Optional
 
 - `title`: card title shown in the header.
-- `device_id`: optional device used by the visual editor to derive the device suffix.
+- `device_id`: optional device used by the visual editor to derive the device suffix; when set, entity lookups are limited to that device.
 
 ## Entity naming
 

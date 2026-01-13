@@ -1,9 +1,10 @@
 var _a;
-const version = '0.2.31';
+const version = '0.2.32';
 console.info('%c UK-RAIL-CARD %c v'.concat(version, ' '), 'color: white; background: navy; font-weight: 700;', 'color: navy; background: white; font-weight: 700;');
 class UkRailCard extends HTMLElement {
     constructor() {
         super();
+        this._entityRegistryLoaded = false;
         this.attachShadow({ mode: 'open' });
     }
     static getStubConfig() {
@@ -21,20 +22,52 @@ class UkRailCard extends HTMLElement {
             throw new Error('You must define a device');
         }
         this._config = config;
+        void this.loadEntityRegistry();
         this.render();
     }
     set hass(hass) {
         this._hass = hass;
+        void this.loadEntityRegistry();
         this.render();
     }
     getCardSize() {
         return 3;
     }
+    async loadEntityRegistry() {
+        var _a, _b;
+        if (this._entityRegistryLoaded ||
+            !((_a = this._hass) === null || _a === void 0 ? void 0 : _a.callWS) ||
+            !((_b = this._config) === null || _b === void 0 ? void 0 : _b.device_id)) {
+            return;
+        }
+        this._entityRegistryLoaded = true;
+        try {
+            this._entityRegistry = await this._hass.callWS({
+                type: 'config/entity_registry/list',
+            });
+        }
+        catch {
+            this._entityRegistry = [];
+        }
+        this.render();
+    }
     findEntityId(suffix) {
+        var _a, _b;
         if (!this._hass) {
             return undefined;
         }
-        return Object.keys(this._hass.states).find((entityId) => entityId.endsWith(suffix));
+        const entityIds = Object.keys(this._hass.states);
+        if ((_a = this._config) === null || _a === void 0 ? void 0 : _a.device_id) {
+            if (!this._entityRegistryLoaded) {
+                void this.loadEntityRegistry();
+                return undefined;
+            }
+            const deviceEntities = ((_b = this._entityRegistry) !== null && _b !== void 0 ? _b : []).filter((entity) => { var _a; return entity.device_id === ((_a = this._config) === null || _a === void 0 ? void 0 : _a.device_id); });
+            const deviceEntityIds = deviceEntities.map((entity) => entity.entity_id);
+            const scopedIds = entityIds.filter((entityId) => deviceEntityIds.includes(entityId));
+            return scopedIds.find((entityId) => entityId.endsWith(suffix));
+        }
+        return entityIds.find((entityId) => entityId.endsWith(suffix));
     }
     getEntityState(entityId) {
         var _a, _b;

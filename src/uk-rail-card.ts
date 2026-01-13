@@ -29,6 +29,8 @@ console.info(
 class UkRailCard extends HTMLElement {
   private _config?: RailCardConfig;
   private _hass?: HomeAssistant;
+  private _entityRegistry?: EntityRegistryEntry[];
+  private _entityRegistryLoaded = false;
 
   constructor() {
     super();
@@ -53,11 +55,13 @@ class UkRailCard extends HTMLElement {
     }
 
     this._config = config;
+    void this.loadEntityRegistry();
     this.render();
   }
 
   set hass(hass: HomeAssistant) {
     this._hass = hass;
+    void this.loadEntityRegistry();
     this.render();
   }
 
@@ -65,14 +69,55 @@ class UkRailCard extends HTMLElement {
     return 3;
   }
 
+  private async loadEntityRegistry(): Promise<void> {
+    if (
+      this._entityRegistryLoaded ||
+      !this._hass?.callWS ||
+      !this._config?.device_id
+    ) {
+      return;
+    }
+
+    this._entityRegistryLoaded = true;
+
+    try {
+      this._entityRegistry = await this._hass.callWS<EntityRegistryEntry[]>({
+        type: 'config/entity_registry/list',
+      });
+    } catch {
+      this._entityRegistry = [];
+    }
+
+    this.render();
+  }
+
   private findEntityId(suffix: string): string | undefined {
     if (!this._hass) {
       return undefined;
     }
 
-    return Object.keys(this._hass.states).find((entityId) =>
-      entityId.endsWith(suffix)
-    );
+    const entityIds = Object.keys(this._hass.states);
+
+    if (this._config?.device_id) {
+      if (!this._entityRegistryLoaded) {
+        void this.loadEntityRegistry();
+        return undefined;
+      }
+
+      const deviceEntities = (this._entityRegistry ?? []).filter(
+        (entity) => entity.device_id === this._config?.device_id
+      );
+      const deviceEntityIds = deviceEntities.map(
+        (entity) => entity.entity_id
+      );
+      const scopedIds = entityIds.filter((entityId) =>
+        deviceEntityIds.includes(entityId)
+      );
+
+      return scopedIds.find((entityId) => entityId.endsWith(suffix));
+    }
+
+    return entityIds.find((entityId) => entityId.endsWith(suffix));
   }
 
   private getEntityState(entityId?: string): string {
