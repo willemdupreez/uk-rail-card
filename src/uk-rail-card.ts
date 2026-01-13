@@ -14,7 +14,7 @@ type HomeAssistant = {
 const version = '__VERSION__';
 
 console.info(
-  '%c UK-RAIL-CARD %c '.concat(version, ' v'),
+  '%c UK-RAIL-CARD %c v'.concat(version, ' '),
   'color: white; background: navy; font-weight: 700;',
   'color: navy; background: white; font-weight: 700;'
 );
