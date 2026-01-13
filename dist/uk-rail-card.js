@@ -1,5 +1,5 @@
 var _a;
-const version = '0.2.33';
+const version = '0.2.34';
 console.info('%c UK-RAIL-CARD %c v'.concat(version, ' '), 'color: white; background: navy; font-weight: 700;', 'color: navy; background: white; font-weight: 700;');
 class UkRailCard extends HTMLElement {
     constructor() {
@@ -122,6 +122,10 @@ class UkRailCard extends HTMLElement {
         }
 
         .header {
+          display: flex;
+          align-items: baseline;
+          justify-content: space-between;
+          gap: 12px;
           padding: 16px 16px 0 16px;
         }
 
@@ -166,14 +170,21 @@ class UkRailCard extends HTMLElement {
         }
 
         .status {
-          padding: 8px 16px 16px;
           font-size: 0.8rem;
           color: var(--secondary-text-color);
+          white-space: nowrap;
         }
       </style>
       <ha-card>
         ${title
-            ? `<div class="header"><div class="title">${title}</div></div>`
+            ? `
+              <div class="header">
+                <div class="title">${title}</div>
+                ${lastUpdatedIso
+                ? `<div class="status"><ha-relative-time></ha-relative-time></div>`
+                : ''}
+              </div>
+            `
             : ''}
         ${rows.length
             ? `
@@ -193,13 +204,6 @@ class UkRailCard extends HTMLElement {
               </div>
             `
             : `<div class="empty">No services available.</div>`}
-        ${lastUpdatedIso
-            ? `
-              <div class="status">
-                Last updated: <ha-relative-time></ha-relative-time>
-              </div>
-            `
-            : ''}
       </ha-card>
     `;
         if (lastUpdatedIso) {
