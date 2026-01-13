@@ -1,6 +1,6 @@
 {
   "name": "uk-rail-card",
-  "version": "0.2.21",
+  "version": "0.2.23",
   "description": "Custom Lovelace card for UK rail service boards.",
   "license": "MIT",
   "type": "module",

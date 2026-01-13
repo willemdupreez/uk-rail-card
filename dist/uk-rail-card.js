@@ -1,24 +1,24 @@
 var _a;
-const version = '"0.2.21"';
-console.info("%c UK-RAIL-CARD %c ".concat(version, " "), "color: white; background: navy; font-weight: 700;", "color: navy; background: white; font-weight: 700;");
+const version = '"0.2.23"';
+console.info('%c UK-RAIL-CARD %c '.concat(version, ' v'), 'color: white; background: navy; font-weight: 700;', 'color: navy; background: white; font-weight: 700;');
 class UkRailCard extends HTMLElement {
     constructor() {
         super();
-        this.attachShadow({ mode: "open" });
+        this.attachShadow({ mode: 'open' });
     }
     static getStubConfig() {
         return {
-            type: "custom:uk-rail-card",
-            title: "Rail Services",
-            device: "rail_station",
+            type: 'custom:uk-rail-card',
+            title: 'Rail Services',
+            device: 'rail_station',
         };
     }
     static getConfigElement() {
-        return document.createElement("uk-rail-card-editor");
+        return document.createElement('uk-rail-card-editor');
     }
     setConfig(config) {
         if (!config.device) {
-            throw new Error("You must define a device");
+            throw new Error('You must define a device');
         }
         this._config = config;
         this.render();
@@ -39,9 +39,9 @@ class UkRailCard extends HTMLElement {
     getEntityState(entityId) {
         var _a, _b;
         if (!entityId || !this._hass) {
-            return "";
+            return '';
         }
-        return (_b = (_a = this._hass.states[entityId]) === null || _a === void 0 ? void 0 : _a.state) !== null && _b !== void 0 ? _b : "";
+        return (_b = (_a = this._hass.states[entityId]) === null || _a === void 0 ? void 0 : _a.state) !== null && _b !== void 0 ? _b : '';
     }
     render() {
         var _a;
@@ -50,7 +50,7 @@ class UkRailCard extends HTMLElement {
         }
         const deviceSuffix = this._config.device;
         const maxEntityId = this.findEntityId(`${deviceSuffix}_max_services`) ||
-            this.findEntityId("max_services");
+            this.findEntityId('max_services');
         const maxServices = Number(this.getEntityState(maxEntityId)) || 0;
         const rows = [];
         for (let index = 1; index <= maxServices; index += 1) {
@@ -65,9 +65,9 @@ class UkRailCard extends HTMLElement {
             const estimatedId = this.findEntityId(`${deviceSuffix}_${index}_estimated_time`) ||
                 this.findEntityId(`${index}_estimated_time`);
             rows.push({
-                scheduled: this.getEntityState(scheduledId) || "-",
+                scheduled: this.getEntityState(scheduledId) || '-',
                 destination,
-                estimated: this.getEntityState(estimatedId) || "-",
+                estimated: this.getEntityState(estimatedId) || '-',
             });
         }
         const title = (_a = this._config.title) === null || _a === void 0 ? void 0 : _a.trim();
@@ -128,7 +128,7 @@ class UkRailCard extends HTMLElement {
       <ha-card>
         ${title
             ? `<div class="header"><div class="title">${title}</div></div>`
-            : ""}
+            : ''}
         ${rows.length
             ? `
               <div class="table">
@@ -143,7 +143,7 @@ class UkRailCard extends HTMLElement {
                         <div class="cell">${row.estimated}</div>
                       </div>
                     `)
-                .join("")}
+                .join('')}
               </div>
             `
             : `<div class="empty">No services available.</div>`}
@@ -154,7 +154,7 @@ class UkRailCard extends HTMLElement {
 class UkRailCardEditor extends HTMLElement {
     constructor() {
         super();
-        this.attachShadow({ mode: "open" });
+        this.attachShadow({ mode: 'open' });
     }
     setConfig(config) {
         this._config = { ...config };
@@ -170,7 +170,7 @@ class UkRailCardEditor extends HTMLElement {
         }
         const nextConfig = { ...this._config };
         const trimmed = value.trim();
-        if (key === "title") {
+        if (key === 'title') {
             if (trimmed) {
                 nextConfig.title = trimmed;
             }
@@ -178,14 +178,14 @@ class UkRailCardEditor extends HTMLElement {
                 delete nextConfig.title;
             }
         }
-        else if (key === "device") {
+        else if (key === 'device') {
             nextConfig.device = trimmed;
         }
         else {
             nextConfig[key] = value;
         }
         this._config = nextConfig;
-        this.dispatchEvent(new CustomEvent("config-changed", {
+        this.dispatchEvent(new CustomEvent('config-changed', {
             detail: { config: nextConfig },
             bubbles: true,
             composed: true,
@@ -220,21 +220,21 @@ class UkRailCardEditor extends HTMLElement {
         ></ha-textfield>
       </div>
     `;
-        this.shadowRoot.querySelectorAll("ha-textfield").forEach((field) => {
+        this.shadowRoot.querySelectorAll('ha-textfield').forEach((field) => {
             var _a, _b, _c, _d, _e;
             const input = field;
             const key = (_a = input.dataset) === null || _a === void 0 ? void 0 : _a.field;
-            if (key === "title") {
-                input.value = (_c = (_b = this._config) === null || _b === void 0 ? void 0 : _b.title) !== null && _c !== void 0 ? _c : "";
+            if (key === 'title') {
+                input.value = (_c = (_b = this._config) === null || _b === void 0 ? void 0 : _b.title) !== null && _c !== void 0 ? _c : '';
             }
-            if (key === "device") {
-                input.value = (_e = (_d = this._config) === null || _d === void 0 ? void 0 : _d.device) !== null && _e !== void 0 ? _e : "";
+            if (key === 'device') {
+                input.value = (_e = (_d = this._config) === null || _d === void 0 ? void 0 : _d.device) !== null && _e !== void 0 ? _e : '';
             }
-            field.addEventListener("input", (event) => {
+            field.addEventListener('input', (event) => {
                 var _a, _b;
                 const target = event.target;
                 const key = (_a = target.dataset) === null || _a === void 0 ? void 0 : _a.field;
-                const value = (_b = target.value) !== null && _b !== void 0 ? _b : "";
+                const value = (_b = target.value) !== null && _b !== void 0 ? _b : '';
                 if (!key) {
                     return;
                 }
@@ -243,14 +243,14 @@ class UkRailCardEditor extends HTMLElement {
         });
     }
 }
-customElements.define("uk-rail-card", UkRailCard);
-customElements.define("uk-rail-card-editor", UkRailCardEditor);
+customElements.define('uk-rail-card', UkRailCard);
+customElements.define('uk-rail-card-editor', UkRailCardEditor);
 window.customCards =
     window.customCards ||
         [];
 (_a = window.customCards) === null || _a === void 0 ? void 0 : _a.push({
-    type: "uk-rail-card",
-    name: "UK Rail Card",
-    description: "Displays upcoming rail services with scheduled and estimated times.",
+    type: 'uk-rail-card',
+    name: 'UK Rail Card',
+    description: 'Displays upcoming rail services with scheduled and estimated times.',
 });
 //# sourceMappingURL=uk-rail-card.js.map
