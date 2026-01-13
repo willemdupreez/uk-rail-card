@@ -1,5 +1,5 @@
 var _a;
-const version = '0.2.30';
+const version = '0.2.31';
 console.info('%c UK-RAIL-CARD %c v'.concat(version, ' '), 'color: white; background: navy; font-weight: 700;', 'color: navy; background: white; font-weight: 700;');
 class UkRailCard extends HTMLElement {
     constructor() {
@@ -63,6 +63,7 @@ class UkRailCard extends HTMLElement {
         for (let index = 1; index <= maxServices; index += 1) {
             const destinationId = this.findEntityId(`${deviceSuffix}_${index}_destination`) ||
                 this.findEntityId(`${index}_destination`);
+            console.log(`Entity ID: ${destinationId}`);
             const destination = this.getEntityState(destinationId).trim();
             if (!destination) {
                 break;

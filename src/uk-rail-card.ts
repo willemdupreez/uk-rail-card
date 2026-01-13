@@ -113,6 +113,9 @@ class UkRailCard extends HTMLElement {
       const destinationId =
         this.findEntityId(`${deviceSuffix}_${index}_destination`) ||
         this.findEntityId(`${index}_destination`);
+
+      console.log(`Entity ID: ${destinationId}`);
+
       const destination = this.getEntityState(destinationId).trim();
 
       if (!destination) {
@@ -322,12 +325,16 @@ class UkRailCardEditor extends HTMLElement {
     }
   }
 
-  private updateFormData(form: HTMLElement & { data?: Record<string, unknown> }) {
+  private updateFormData(
+    form: HTMLElement & { data?: Record<string, unknown> }
+  ) {
     const nextData = {
       title: this._config?.title ?? '',
       device_id: this._config?.device_id ?? '',
     };
-    const current = form.data as { title?: string; device_id?: string } | undefined;
+    const current = form.data as
+      | { title?: string; device_id?: string }
+      | undefined;
 
     if (
       current?.title === nextData.title &&
