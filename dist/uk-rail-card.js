@@ -1,5 +1,5 @@
 var _a;
-const version = '0.2.26';
+const version = '0.2.27';
 console.info('%c UK-RAIL-CARD %c v'.concat(version, ' '), 'color: white; background: navy; font-weight: 700;', 'color: navy; background: white; font-weight: 700;');
 class UkRailCard extends HTMLElement {
     constructor() {
@@ -154,7 +154,6 @@ class UkRailCard extends HTMLElement {
 class UkRailCardEditor extends HTMLElement {
     constructor() {
         super();
-        this._devicesLoaded = false;
         this._entitiesLoaded = false;
         this.attachShadow({ mode: 'open' });
     }
@@ -164,7 +163,6 @@ class UkRailCardEditor extends HTMLElement {
     }
     set hass(hass) {
         this._hass = hass;
-        void this.loadDevices();
         void this.loadEntities();
         this.render();
     }
@@ -202,28 +200,6 @@ class UkRailCardEditor extends HTMLElement {
             bubbles: true,
             composed: true,
         }));
-    }
-    async loadDevices() {
-        var _a;
-        if (this._devicesLoaded || !((_a = this._hass) === null || _a === void 0 ? void 0 : _a.callWS)) {
-            return;
-        }
-        this._devicesLoaded = true;
-        try {
-            const devices = await this._hass.callWS({
-                type: 'config/device_registry/list',
-            });
-            this._devices = devices.filter((device) => {
-                var _a, _b;
-                const manufacturer = ((_a = device.manufacturer) !== null && _a !== void 0 ? _a : '').toLowerCase();
-                const model = ((_b = device.model) !== null && _b !== void 0 ? _b : '').toLowerCase();
-                return manufacturer === 'rail2mqtt' && model === 'departure board';
-            });
-        }
-        catch {
-            this._devices = [];
-        }
-        this.render();
     }
     async loadEntities() {
         var _a;
@@ -294,7 +270,7 @@ class UkRailCardEditor extends HTMLElement {
         }));
     }
     render() {
-        var _a, _b;
+        var _a, _b, _c, _d;
         if (!this.shadowRoot) {
             return;
         }
@@ -304,54 +280,50 @@ class UkRailCardEditor extends HTMLElement {
           display: block;
           padding: 8px 0;
         }
-
-        .form {
-          display: grid;
-          gap: 16px;
-        }
       </style>
-      <div class="form">
-        <ha-textfield
-          label="Title (optional)"
-          data-field="title"
-        ></ha-textfield>
-        <ha-device-picker
-          label="Device"
-          helper="Select a rail2mqtt Departure Board device."
-          persistent-helper
-          data-field="device_id"
-        ></ha-device-picker>
-      </div>
+      <ha-form></ha-form>
     `;
-        this.shadowRoot.querySelectorAll('ha-textfield').forEach((field) => {
-            var _a, _b, _c;
-            const input = field;
-            const key = (_a = input.dataset) === null || _a === void 0 ? void 0 : _a.field;
-            if (key === 'title') {
-                input.value = (_c = (_b = this._config) === null || _b === void 0 ? void 0 : _b.title) !== null && _c !== void 0 ? _c : '';
-            }
-            field.addEventListener('input', (event) => {
-                var _a, _b;
-                const target = event.target;
-                const key = (_a = target.dataset) === null || _a === void 0 ? void 0 : _a.field;
-                const value = (_b = target.value) !== null && _b !== void 0 ? _b : '';
-                if (!key) {
-                    return;
-                }
-                this.updateConfigValue(key, value);
-            });
-        });
-        const picker = this.shadowRoot.querySelector('ha-device-picker');
-        if (picker) {
-            picker.hass = this._hass;
-            picker.devices = this._devices;
-            picker.value = (_b = (_a = this._config) === null || _a === void 0 ? void 0 : _a.device_id) !== null && _b !== void 0 ? _b : '';
-            picker.addEventListener('value-changed', (event) => {
-                var _a;
-                const detail = event.detail;
-                this.updateDeviceFromDevice((_a = detail.value) !== null && _a !== void 0 ? _a : '');
-            });
+        const form = this.shadowRoot.querySelector('ha-form');
+        if (!form) {
+            return;
         }
+        form.hass = this._hass;
+        form.data = {
+            title: (_b = (_a = this._config) === null || _a === void 0 ? void 0 : _a.title) !== null && _b !== void 0 ? _b : '',
+            device_id: (_d = (_c = this._config) === null || _c === void 0 ? void 0 : _c.device_id) !== null && _d !== void 0 ? _d : '',
+        };
+        form.schema = [
+            { name: 'title', selector: { text: {} } },
+            {
+                name: 'device_id',
+                selector: {
+                    device: { manufacturer: 'rail2mqtt', model: 'Departure Board' },
+                },
+            },
+        ];
+        form.computeLabel = (schema) => {
+            if (schema.name === 'title') {
+                return 'Title (optional)';
+            }
+            return 'Device';
+        };
+        form.computeHelper = (schema) => {
+            if (schema.name === 'device_id') {
+                return 'Select a rail2mqtt Departure Board device.';
+            }
+            return '';
+        };
+        form.addEventListener('value-changed', (event) => {
+            var _a, _b, _c, _d, _e, _f, _g;
+            const detail = event.detail;
+            const value = (_a = detail.value) !== null && _a !== void 0 ? _a : {};
+            if (value.title !== ((_c = (_b = this._config) === null || _b === void 0 ? void 0 : _b.title) !== null && _c !== void 0 ? _c : '')) {
+                this.updateConfigValue('title', (_d = value.title) !== null && _d !== void 0 ? _d : '');
+            }
+            if (value.device_id !== ((_f = (_e = this._config) === null || _e === void 0 ? void 0 : _e.device_id) !== null && _f !== void 0 ? _f : '')) {
+                this.updateDeviceFromDevice((_g = value.device_id) !== null && _g !== void 0 ? _g : '');
+            }
+        });
     }
 }
 customElements.define('uk-rail-card', UkRailCard);

@@ -13,14 +13,6 @@ type HomeAssistant = {
   callWS?: <T>(message: Record<string, unknown>) => Promise<T>;
 };
 
-type DeviceRegistryEntry = {
-  id: string;
-  manufacturer?: string | null;
-  model?: string | null;
-  name?: string | null;
-  name_by_user?: string | null;
-};
-
 type EntityRegistryEntry = {
   entity_id: string;
   device_id?: string | null;
@@ -224,9 +216,7 @@ class UkRailCard extends HTMLElement {
 class UkRailCardEditor extends HTMLElement {
   private _config?: RailCardConfig;
   private _hass?: HomeAssistant;
-  private _devices?: DeviceRegistryEntry[];
   private _entities?: EntityRegistryEntry[];
-  private _devicesLoaded = false;
   private _entitiesLoaded = false;
 
   constructor() {
@@ -241,7 +231,6 @@ class UkRailCardEditor extends HTMLElement {
 
   set hass(hass: HomeAssistant) {
     this._hass = hass;
-    void this.loadDevices();
     void this.loadEntities();
     this.render();
   }
@@ -280,31 +269,6 @@ class UkRailCardEditor extends HTMLElement {
         composed: true,
       })
     );
-  }
-
-  private async loadDevices(): Promise<void> {
-    if (this._devicesLoaded || !this._hass?.callWS) {
-      return;
-    }
-
-    this._devicesLoaded = true;
-
-    try {
-      const devices = await this._hass.callWS<DeviceRegistryEntry[]>({
-        type: 'config/device_registry/list',
-      });
-
-      this._devices = devices.filter((device) => {
-        const manufacturer = (device.manufacturer ?? '').toLowerCase();
-        const model = (device.model ?? '').toLowerCase();
-
-        return manufacturer === 'rail2mqtt' && model === 'departure board';
-      });
-    } catch {
-      this._devices = [];
-    }
-
-    this.render();
   }
 
   private async loadEntities(): Promise<void> {
@@ -410,67 +374,66 @@ class UkRailCardEditor extends HTMLElement {
           display: block;
           padding: 8px 0;
         }
-
-        .form {
-          display: grid;
-          gap: 16px;
-        }
       </style>
-      <div class="form">
-        <ha-textfield
-          label="Title (optional)"
-          data-field="title"
-        ></ha-textfield>
-        <ha-device-picker
-          label="Device"
-          helper="Select a rail2mqtt Departure Board device."
-          persistent-helper
-          data-field="device_id"
-        ></ha-device-picker>
-      </div>
+      <ha-form></ha-form>
     `;
 
-    this.shadowRoot.querySelectorAll('ha-textfield').forEach((field) => {
-      const input = field as { value?: string; dataset?: DOMStringMap };
-      const key = input.dataset?.field as keyof RailCardConfig | undefined;
-
-      if (key === 'title') {
-        input.value = this._config?.title ?? '';
-      }
-
-      field.addEventListener('input', (event) => {
-        const target = event.target as {
-          value?: string;
-          dataset?: DOMStringMap;
-        };
-        const key = target.dataset?.field as keyof RailCardConfig | undefined;
-        const value = target.value ?? '';
-
-        if (!key) {
-          return;
-        }
-
-        this.updateConfigValue(key, value);
-      });
-    });
-
-    const picker = this.shadowRoot.querySelector('ha-device-picker') as
+    const form = this.shadowRoot.querySelector('ha-form') as
       | (HTMLElement & {
           hass?: HomeAssistant;
-          value?: string;
-          devices?: DeviceRegistryEntry[];
+          data?: Record<string, unknown>;
+          schema?: Array<Record<string, unknown>>;
+          computeLabel?: (schema: { name: string }) => string;
+          computeHelper?: (schema: { name: string }) => string;
         })
       | null;
 
-    if (picker) {
-      picker.hass = this._hass;
-      picker.devices = this._devices;
-      picker.value = this._config?.device_id ?? '';
-      picker.addEventListener('value-changed', (event) => {
-        const detail = (event as CustomEvent).detail as { value?: string };
-        this.updateDeviceFromDevice(detail.value ?? '');
-      });
+    if (!form) {
+      return;
     }
+
+    form.hass = this._hass;
+    form.data = {
+      title: this._config?.title ?? '',
+      device_id: this._config?.device_id ?? '',
+    };
+    form.schema = [
+      { name: 'title', selector: { text: {} } },
+      {
+        name: 'device_id',
+        selector: {
+          device: { manufacturer: 'rail2mqtt', model: 'Departure Board' },
+        },
+      },
+    ];
+    form.computeLabel = (schema: { name: string }) => {
+      if (schema.name === 'title') {
+        return 'Title (optional)';
+      }
+
+      return 'Device';
+    };
+    form.computeHelper = (schema: { name: string }) => {
+      if (schema.name === 'device_id') {
+        return 'Select a rail2mqtt Departure Board device.';
+      }
+
+      return '';
+    };
+    form.addEventListener('value-changed', (event) => {
+      const detail = (event as CustomEvent).detail as {
+        value?: { title?: string; device_id?: string };
+      };
+      const value = detail.value ?? {};
+
+      if (value.title !== (this._config?.title ?? '')) {
+        this.updateConfigValue('title', value.title ?? '');
+      }
+
+      if (value.device_id !== (this._config?.device_id ?? '')) {
+        this.updateDeviceFromDevice(value.device_id ?? '');
+      }
+    });
   }
 }
 
