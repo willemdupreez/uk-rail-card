@@ -1,5 +1,5 @@
 var _a;
-const version = '0.2.28';
+const version = '0.2.29';
 console.info('%c UK-RAIL-CARD %c v'.concat(version, ' '), 'color: white; background: navy; font-weight: 700;', 'color: navy; background: white; font-weight: 700;');
 class UkRailCard extends HTMLElement {
     constructor() {
@@ -52,6 +52,9 @@ class UkRailCard extends HTMLElement {
         const maxEntityId = this.findEntityId(`${deviceSuffix}_max_services`) ||
             this.findEntityId('max_services');
         const maxServices = Number(this.getEntityState(maxEntityId)) || 0;
+        const lastUpdatedEntityId = this.findEntityId(`${deviceSuffix}_last_updated`) ||
+            this.findEntityId('last_updated');
+        const lastUpdated = this.getEntityState(lastUpdatedEntityId);
         const rows = [];
         for (let index = 1; index <= maxServices; index += 1) {
             const destinationId = this.findEntityId(`${deviceSuffix}_${index}_destination`) ||
@@ -124,6 +127,12 @@ class UkRailCard extends HTMLElement {
           color: var(--secondary-text-color);
           font-style: italic;
         }
+
+        .status {
+          padding: 8px 16px 16px;
+          font-size: 0.8rem;
+          color: var(--secondary-text-color);
+        }
       </style>
       <ha-card>
         ${title
@@ -147,6 +156,9 @@ class UkRailCard extends HTMLElement {
               </div>
             `
             : `<div class="empty">No services available.</div>`}
+        ${lastUpdated
+            ? `<div class="status">Last updated: ${lastUpdated}</div>`
+            : ''}
       </ha-card>
     `;
     }

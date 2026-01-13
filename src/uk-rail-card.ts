@@ -93,6 +93,10 @@ class UkRailCard extends HTMLElement {
       this.findEntityId(`${deviceSuffix}_max_services`) ||
       this.findEntityId('max_services');
     const maxServices = Number(this.getEntityState(maxEntityId)) || 0;
+    const lastUpdatedEntityId =
+      this.findEntityId(`${deviceSuffix}_last_updated`) ||
+      this.findEntityId('last_updated');
+    const lastUpdated = this.getEntityState(lastUpdatedEntityId);
 
     const rows: Array<{
       scheduled: string;
@@ -179,6 +183,12 @@ class UkRailCard extends HTMLElement {
           color: var(--secondary-text-color);
           font-style: italic;
         }
+
+        .status {
+          padding: 8px 16px 16px;
+          font-size: 0.8rem;
+          color: var(--secondary-text-color);
+        }
       </style>
       <ha-card>
         ${
@@ -207,6 +217,11 @@ class UkRailCard extends HTMLElement {
               </div>
             `
             : `<div class="empty">No services available.</div>`
+        }
+        ${
+          lastUpdated
+            ? `<div class="status">Last updated: ${lastUpdated}</div>`
+            : ''
         }
       </ha-card>
     `;
