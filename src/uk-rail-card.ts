@@ -97,6 +97,11 @@ class UkRailCard extends HTMLElement {
       this.findEntityId(`${deviceSuffix}_last_updated`) ||
       this.findEntityId('last_updated');
     const lastUpdated = this.getEntityState(lastUpdatedEntityId);
+    const lastUpdatedDate = lastUpdated ? new Date(lastUpdated) : null;
+    const lastUpdatedIso =
+      lastUpdatedDate && !Number.isNaN(lastUpdatedDate.getTime())
+        ? lastUpdatedDate.toISOString()
+        : '';
 
     const rows: Array<{
       scheduled: string;
@@ -219,12 +224,27 @@ class UkRailCard extends HTMLElement {
             : `<div class="empty">No services available.</div>`
         }
         ${
-          lastUpdated
-            ? `<div class="status">Last updated: ${lastUpdated}</div>`
+          lastUpdatedIso
+            ? `
+              <div class="status">
+                Last updated: <ha-relative-time></ha-relative-time>
+              </div>
+            `
             : ''
         }
       </ha-card>
     `;
+
+    if (lastUpdatedIso) {
+      const relativeTime = this.shadowRoot.querySelector('ha-relative-time') as
+        | (HTMLElement & { hass?: HomeAssistant; datetime?: string })
+        | null;
+
+      if (relativeTime) {
+        relativeTime.hass = this._hass;
+        relativeTime.datetime = lastUpdatedIso;
+      }
+    }
   }
 }
 

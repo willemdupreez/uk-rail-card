@@ -1,5 +1,5 @@
 var _a;
-const version = '0.2.29';
+const version = '0.2.30';
 console.info('%c UK-RAIL-CARD %c v'.concat(version, ' '), 'color: white; background: navy; font-weight: 700;', 'color: navy; background: white; font-weight: 700;');
 class UkRailCard extends HTMLElement {
     constructor() {
@@ -55,6 +55,10 @@ class UkRailCard extends HTMLElement {
         const lastUpdatedEntityId = this.findEntityId(`${deviceSuffix}_last_updated`) ||
             this.findEntityId('last_updated');
         const lastUpdated = this.getEntityState(lastUpdatedEntityId);
+        const lastUpdatedDate = lastUpdated ? new Date(lastUpdated) : null;
+        const lastUpdatedIso = lastUpdatedDate && !Number.isNaN(lastUpdatedDate.getTime())
+            ? lastUpdatedDate.toISOString()
+            : '';
         const rows = [];
         for (let index = 1; index <= maxServices; index += 1) {
             const destinationId = this.findEntityId(`${deviceSuffix}_${index}_destination`) ||
@@ -156,11 +160,22 @@ class UkRailCard extends HTMLElement {
               </div>
             `
             : `<div class="empty">No services available.</div>`}
-        ${lastUpdated
-            ? `<div class="status">Last updated: ${lastUpdated}</div>`
+        ${lastUpdatedIso
+            ? `
+              <div class="status">
+                Last updated: <ha-relative-time></ha-relative-time>
+              </div>
+            `
             : ''}
       </ha-card>
     `;
+        if (lastUpdatedIso) {
+            const relativeTime = this.shadowRoot.querySelector('ha-relative-time');
+            if (relativeTime) {
+                relativeTime.hass = this._hass;
+                relativeTime.datetime = lastUpdatedIso;
+            }
+        }
     }
 }
 class UkRailCardEditor extends HTMLElement {
