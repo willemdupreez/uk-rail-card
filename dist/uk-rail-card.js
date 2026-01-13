@@ -1,5 +1,5 @@
 var _a;
-const version = '0.2.24';
+const version = '0.2.25';
 console.info('%c UK-RAIL-CARD %c v'.concat(version, ' '), 'color: white; background: navy; font-weight: 700;', 'color: navy; background: white; font-weight: 700;');
 class UkRailCard extends HTMLElement {
     constructor() {
@@ -181,6 +181,14 @@ class UkRailCardEditor extends HTMLElement {
         else if (key === 'device') {
             nextConfig.device = trimmed;
         }
+        else if (key === 'device_entity') {
+            if (trimmed) {
+                nextConfig.device_entity = trimmed;
+            }
+            else {
+                delete nextConfig.device_entity;
+            }
+        }
         else {
             nextConfig[key] = value;
         }
@@ -191,7 +199,41 @@ class UkRailCardEditor extends HTMLElement {
             composed: true,
         }));
     }
+    deriveDeviceSuffix(entityId) {
+        var _a;
+        const entityName = (_a = entityId.split('.')[1]) !== null && _a !== void 0 ? _a : '';
+        if (entityName.endsWith('_max_services')) {
+            return entityName.replace(/_max_services$/, '');
+        }
+        const match = entityName.match(/^(.*)_\d+_(scheduled_time|destination|estimated_time)$/);
+        if (match) {
+            return match[1];
+        }
+        return entityName;
+    }
+    updateDeviceFromEntity(entityId) {
+        if (!this._config) {
+            return;
+        }
+        const trimmed = entityId.trim();
+        const nextConfig = { ...this._config };
+        if (trimmed) {
+            nextConfig.device_entity = trimmed;
+            nextConfig.device = this.deriveDeviceSuffix(trimmed);
+        }
+        else {
+            delete nextConfig.device_entity;
+            nextConfig.device = '';
+        }
+        this._config = nextConfig;
+        this.dispatchEvent(new CustomEvent('config-changed', {
+            detail: { config: nextConfig },
+            bubbles: true,
+            composed: true,
+        }));
+    }
     render() {
+        var _a, _b;
         if (!this.shadowRoot) {
             return;
         }
@@ -212,23 +254,20 @@ class UkRailCardEditor extends HTMLElement {
           label="Title (optional)"
           data-field="title"
         ></ha-textfield>
-        <ha-textfield
-          label="Device suffix"
-          helper="Matches entities ending in \${device}_max_services, \${device}_1_destination, etc."
+        <ha-entity-picker
+          label="Device entity"
+          helper="Select any rail entity; the device suffix is derived automatically."
           persistent-helper
-          data-field="device"
-        ></ha-textfield>
+          data-field="device_entity"
+        ></ha-entity-picker>
       </div>
     `;
         this.shadowRoot.querySelectorAll('ha-textfield').forEach((field) => {
-            var _a, _b, _c, _d, _e;
+            var _a, _b, _c;
             const input = field;
             const key = (_a = input.dataset) === null || _a === void 0 ? void 0 : _a.field;
             if (key === 'title') {
                 input.value = (_c = (_b = this._config) === null || _b === void 0 ? void 0 : _b.title) !== null && _c !== void 0 ? _c : '';
-            }
-            if (key === 'device') {
-                input.value = (_e = (_d = this._config) === null || _d === void 0 ? void 0 : _d.device) !== null && _e !== void 0 ? _e : '';
             }
             field.addEventListener('input', (event) => {
                 var _a, _b;
@@ -241,6 +280,16 @@ class UkRailCardEditor extends HTMLElement {
                 this.updateConfigValue(key, value);
             });
         });
+        const picker = this.shadowRoot.querySelector('ha-entity-picker');
+        if (picker) {
+            picker.hass = this._hass;
+            picker.value = (_b = (_a = this._config) === null || _a === void 0 ? void 0 : _a.device_entity) !== null && _b !== void 0 ? _b : '';
+            picker.addEventListener('value-changed', (event) => {
+                var _a;
+                const detail = event.detail;
+                this.updateDeviceFromEntity((_a = detail.value) !== null && _a !== void 0 ? _a : '');
+            });
+        }
     }
 }
 customElements.define('uk-rail-card', UkRailCard);

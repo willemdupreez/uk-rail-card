@@ -2,6 +2,7 @@ interface RailCardConfig {
   type: string;
   title?: string;
   device: string;
+  device_entity?: string;
 }
 
 type HomeAssistant = {
@@ -241,8 +242,58 @@ class UkRailCardEditor extends HTMLElement {
       }
     } else if (key === 'device') {
       nextConfig.device = trimmed;
+    } else if (key === 'device_entity') {
+      if (trimmed) {
+        nextConfig.device_entity = trimmed;
+      } else {
+        delete nextConfig.device_entity;
+      }
     } else {
       nextConfig[key] = value;
+    }
+
+    this._config = nextConfig;
+    this.dispatchEvent(
+      new CustomEvent('config-changed', {
+        detail: { config: nextConfig },
+        bubbles: true,
+        composed: true,
+      })
+    );
+  }
+
+  private deriveDeviceSuffix(entityId: string): string {
+    const entityName = entityId.split('.')[1] ?? '';
+
+    if (entityName.endsWith('_max_services')) {
+      return entityName.replace(/_max_services$/, '');
+    }
+
+    const match = entityName.match(
+      /^(.*)_\d+_(scheduled_time|destination|estimated_time)$/
+    );
+
+    if (match) {
+      return match[1];
+    }
+
+    return entityName;
+  }
+
+  private updateDeviceFromEntity(entityId: string): void {
+    if (!this._config) {
+      return;
+    }
+
+    const trimmed = entityId.trim();
+    const nextConfig: RailCardConfig = { ...this._config };
+
+    if (trimmed) {
+      nextConfig.device_entity = trimmed;
+      nextConfig.device = this.deriveDeviceSuffix(trimmed);
+    } else {
+      delete nextConfig.device_entity;
+      nextConfig.device = '';
     }
 
     this._config = nextConfig;
@@ -277,12 +328,12 @@ class UkRailCardEditor extends HTMLElement {
           label="Title (optional)"
           data-field="title"
         ></ha-textfield>
-        <ha-textfield
-          label="Device suffix"
-          helper="Matches entities ending in \${device}_max_services, \${device}_1_destination, etc."
+        <ha-entity-picker
+          label="Device entity"
+          helper="Select any rail entity; the device suffix is derived automatically."
           persistent-helper
-          data-field="device"
-        ></ha-textfield>
+          data-field="device_entity"
+        ></ha-entity-picker>
       </div>
     `;
 
@@ -292,10 +343,6 @@ class UkRailCardEditor extends HTMLElement {
 
       if (key === 'title') {
         input.value = this._config?.title ?? '';
-      }
-
-      if (key === 'device') {
-        input.value = this._config?.device ?? '';
       }
 
       field.addEventListener('input', (event) => {
@@ -313,6 +360,19 @@ class UkRailCardEditor extends HTMLElement {
         this.updateConfigValue(key, value);
       });
     });
+
+    const picker = this.shadowRoot.querySelector('ha-entity-picker') as
+      | (HTMLElement & { hass?: HomeAssistant; value?: string })
+      | null;
+
+    if (picker) {
+      picker.hass = this._hass;
+      picker.value = this._config?.device_entity ?? '';
+      picker.addEventListener('value-changed', (event) => {
+        const detail = (event as CustomEvent).detail as { value?: string };
+        this.updateDeviceFromEntity(detail.value ?? '');
+      });
+    }
   }
 }
 
