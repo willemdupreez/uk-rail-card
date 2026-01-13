@@ -1,5 +1,5 @@
 var _a;
-const version = '0.2.27';
+const version = '0.2.28';
 console.info('%c UK-RAIL-CARD %c v'.concat(version, ' '), 'color: white; background: navy; font-weight: 700;', 'color: navy; background: white; font-weight: 700;');
 class UkRailCard extends HTMLElement {
     constructor() {
@@ -215,7 +215,19 @@ class UkRailCardEditor extends HTMLElement {
         catch {
             this._entities = [];
         }
-        this.render();
+    }
+    updateFormData(form) {
+        var _a, _b, _c, _d;
+        const nextData = {
+            title: (_b = (_a = this._config) === null || _a === void 0 ? void 0 : _a.title) !== null && _b !== void 0 ? _b : '',
+            device_id: (_d = (_c = this._config) === null || _c === void 0 ? void 0 : _c.device_id) !== null && _d !== void 0 ? _d : '',
+        };
+        const current = form.data;
+        if ((current === null || current === void 0 ? void 0 : current.title) === nextData.title &&
+            (current === null || current === void 0 ? void 0 : current.device_id) === nextData.device_id) {
+            return;
+        }
+        form.data = nextData;
     }
     deriveDeviceSuffix(entityId) {
         var _a;
@@ -270,29 +282,25 @@ class UkRailCardEditor extends HTMLElement {
         }));
     }
     render() {
-        var _a, _b, _c, _d;
         if (!this.shadowRoot) {
             return;
         }
-        this.shadowRoot.innerHTML = `
-      <style>
-        :host {
-          display: block;
-          padding: 8px 0;
-        }
-      </style>
-      <ha-form></ha-form>
-    `;
         const form = this.shadowRoot.querySelector('ha-form');
         if (!form) {
-            return;
+            this.shadowRoot.innerHTML = `
+        <style>
+          :host {
+            display: block;
+            padding: 8px 0;
+          }
+        </style>
+        <ha-form></ha-form>
+      `;
         }
-        form.hass = this._hass;
-        form.data = {
-            title: (_b = (_a = this._config) === null || _a === void 0 ? void 0 : _a.title) !== null && _b !== void 0 ? _b : '',
-            device_id: (_d = (_c = this._config) === null || _c === void 0 ? void 0 : _c.device_id) !== null && _d !== void 0 ? _d : '',
-        };
-        form.schema = [
+        const resolvedForm = this.shadowRoot.querySelector('ha-form');
+        resolvedForm.hass = this._hass;
+        this.updateFormData(resolvedForm);
+        resolvedForm.schema = [
             { name: 'title', selector: { text: {} } },
             {
                 name: 'device_id',
@@ -301,29 +309,32 @@ class UkRailCardEditor extends HTMLElement {
                 },
             },
         ];
-        form.computeLabel = (schema) => {
+        resolvedForm.computeLabel = (schema) => {
             if (schema.name === 'title') {
                 return 'Title (optional)';
             }
             return 'Device';
         };
-        form.computeHelper = (schema) => {
+        resolvedForm.computeHelper = (schema) => {
             if (schema.name === 'device_id') {
                 return 'Select a rail2mqtt Departure Board device.';
             }
             return '';
         };
-        form.addEventListener('value-changed', (event) => {
-            var _a, _b, _c, _d, _e, _f, _g;
-            const detail = event.detail;
-            const value = (_a = detail.value) !== null && _a !== void 0 ? _a : {};
-            if (value.title !== ((_c = (_b = this._config) === null || _b === void 0 ? void 0 : _b.title) !== null && _c !== void 0 ? _c : '')) {
-                this.updateConfigValue('title', (_d = value.title) !== null && _d !== void 0 ? _d : '');
-            }
-            if (value.device_id !== ((_f = (_e = this._config) === null || _e === void 0 ? void 0 : _e.device_id) !== null && _f !== void 0 ? _f : '')) {
-                this.updateDeviceFromDevice((_g = value.device_id) !== null && _g !== void 0 ? _g : '');
-            }
-        });
+        if (!resolvedForm.hasAttribute('data-listener')) {
+            resolvedForm.setAttribute('data-listener', 'true');
+            resolvedForm.addEventListener('value-changed', (event) => {
+                var _a, _b, _c, _d, _e, _f, _g;
+                const detail = event.detail;
+                const value = (_a = detail.value) !== null && _a !== void 0 ? _a : {};
+                if (value.title !== ((_c = (_b = this._config) === null || _b === void 0 ? void 0 : _b.title) !== null && _c !== void 0 ? _c : '')) {
+                    this.updateConfigValue('title', (_d = value.title) !== null && _d !== void 0 ? _d : '');
+                }
+                if (value.device_id !== ((_f = (_e = this._config) === null || _e === void 0 ? void 0 : _e.device_id) !== null && _f !== void 0 ? _f : '')) {
+                    this.updateDeviceFromDevice((_g = value.device_id) !== null && _g !== void 0 ? _g : '');
+                }
+            });
+        }
     }
 }
 customElements.define('uk-rail-card', UkRailCard);

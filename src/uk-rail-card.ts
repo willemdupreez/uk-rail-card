@@ -285,8 +285,23 @@ class UkRailCardEditor extends HTMLElement {
     } catch {
       this._entities = [];
     }
+  }
 
-    this.render();
+  private updateFormData(form: HTMLElement & { data?: Record<string, unknown> }) {
+    const nextData = {
+      title: this._config?.title ?? '',
+      device_id: this._config?.device_id ?? '',
+    };
+    const current = form.data as { title?: string; device_id?: string } | undefined;
+
+    if (
+      current?.title === nextData.title &&
+      current?.device_id === nextData.device_id
+    ) {
+      return;
+    }
+
+    form.data = nextData;
   }
 
   private deriveDeviceSuffix(entityId: string): string {
@@ -368,16 +383,6 @@ class UkRailCardEditor extends HTMLElement {
       return;
     }
 
-    this.shadowRoot.innerHTML = `
-      <style>
-        :host {
-          display: block;
-          padding: 8px 0;
-        }
-      </style>
-      <ha-form></ha-form>
-    `;
-
     const form = this.shadowRoot.querySelector('ha-form') as
       | (HTMLElement & {
           hass?: HomeAssistant;
@@ -389,15 +394,30 @@ class UkRailCardEditor extends HTMLElement {
       | null;
 
     if (!form) {
-      return;
+      this.shadowRoot.innerHTML = `
+        <style>
+          :host {
+            display: block;
+            padding: 8px 0;
+          }
+        </style>
+        <ha-form></ha-form>
+      `;
     }
 
-    form.hass = this._hass;
-    form.data = {
-      title: this._config?.title ?? '',
-      device_id: this._config?.device_id ?? '',
-    };
-    form.schema = [
+    const resolvedForm = (this.shadowRoot.querySelector('ha-form') as
+      | (HTMLElement & {
+          hass?: HomeAssistant;
+          data?: Record<string, unknown>;
+          schema?: Array<Record<string, unknown>>;
+          computeLabel?: (schema: { name: string }) => string;
+          computeHelper?: (schema: { name: string }) => string;
+        })
+      | null)!;
+
+    resolvedForm.hass = this._hass;
+    this.updateFormData(resolvedForm);
+    resolvedForm.schema = [
       { name: 'title', selector: { text: {} } },
       {
         name: 'device_id',
@@ -406,34 +426,37 @@ class UkRailCardEditor extends HTMLElement {
         },
       },
     ];
-    form.computeLabel = (schema: { name: string }) => {
+    resolvedForm.computeLabel = (schema: { name: string }) => {
       if (schema.name === 'title') {
         return 'Title (optional)';
       }
 
       return 'Device';
     };
-    form.computeHelper = (schema: { name: string }) => {
+    resolvedForm.computeHelper = (schema: { name: string }) => {
       if (schema.name === 'device_id') {
         return 'Select a rail2mqtt Departure Board device.';
       }
 
       return '';
     };
-    form.addEventListener('value-changed', (event) => {
-      const detail = (event as CustomEvent).detail as {
-        value?: { title?: string; device_id?: string };
-      };
-      const value = detail.value ?? {};
+    if (!resolvedForm.hasAttribute('data-listener')) {
+      resolvedForm.setAttribute('data-listener', 'true');
+      resolvedForm.addEventListener('value-changed', (event) => {
+        const detail = (event as CustomEvent).detail as {
+          value?: { title?: string; device_id?: string };
+        };
+        const value = detail.value ?? {};
 
-      if (value.title !== (this._config?.title ?? '')) {
-        this.updateConfigValue('title', value.title ?? '');
-      }
+        if (value.title !== (this._config?.title ?? '')) {
+          this.updateConfigValue('title', value.title ?? '');
+        }
 
-      if (value.device_id !== (this._config?.device_id ?? '')) {
-        this.updateDeviceFromDevice(value.device_id ?? '');
-      }
-    });
+        if (value.device_id !== (this._config?.device_id ?? '')) {
+          this.updateDeviceFromDevice(value.device_id ?? '');
+        }
+      });
+    }
   }
 }
 
