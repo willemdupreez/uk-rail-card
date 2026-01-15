@@ -1,5 +1,5 @@
 var _a;
-const version = '0.2.40';
+const version = '0.2.41';
 console.info('%c UK-RAIL-CARD %c v'.concat(version, ' '), 'color: white; background: navy; font-weight: 700;', 'color: navy; background: white; font-weight: 700;');
 class UkRailCard extends HTMLElement {
     constructor() {
@@ -114,6 +114,10 @@ class UkRailCard extends HTMLElement {
         }
         return (_b = (_a = this._hass.states[entityId]) === null || _a === void 0 ? void 0 : _a.state) !== null && _b !== void 0 ? _b : '';
     }
+    isEntityOn(entityId) {
+        const state = this.getEntityState(entityId).toLowerCase();
+        return state === 'on' || state === 'true';
+    }
     render() {
         var _a;
         if (!this.shadowRoot || !this._config || !this._hass) {
@@ -139,10 +143,22 @@ class UkRailCard extends HTMLElement {
                 this.findEntityId(`${index}_scheduled_time`);
             const estimatedId = this.findEntityId(`_${index}_estimated_time`) ||
                 this.findEntityId(`${index}_estimated_time`);
+            const cancelledId = this.findEntityId(`_${index}_cancelled`) ||
+                this.findEntityId(`${index}_cancelled`);
+            const delayedId = this.findEntityId(`_${index}_delayed`) ||
+                this.findEntityId(`${index}_delayed`);
+            let status = 'normal';
+            if (this.isEntityOn(cancelledId)) {
+                status = 'cancelled';
+            }
+            else if (this.isEntityOn(delayedId)) {
+                status = 'delayed';
+            }
             rows.push({
                 scheduled: this.getEntityState(scheduledId) || '-',
                 destination,
                 estimated: this.getEntityState(estimatedId) || '-',
+                status,
             });
         }
         const title = ((_a = this._config.title) === null || _a === void 0 ? void 0 : _a.trim()) || this.getDeviceName();
@@ -189,6 +205,14 @@ class UkRailCard extends HTMLElement {
           font-size: 0.95rem;
         }
 
+        .row.is-cancelled .cell {
+          color: var(--error-color);
+        }
+
+        .row.is-delayed .cell {
+          color: var(--warning-color);
+        }
+
         .cell {
           padding: 4px 0;
           border-bottom: 1px solid rgba(0, 0, 0, 0.08);
@@ -230,7 +254,11 @@ class UkRailCard extends HTMLElement {
                 <div class="head">Estimated</div>
                 ${rows
                 .map((row) => `
-                      <div class="row">
+                      <div class="row ${row.status === 'cancelled'
+                ? 'is-cancelled'
+                : row.status === 'delayed'
+                    ? 'is-delayed'
+                    : ''}">
                         <div class="cell">${row.scheduled}</div>
                         <div class="cell">${row.destination}</div>
                         <div class="cell">${row.estimated}</div>

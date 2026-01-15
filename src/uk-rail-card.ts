@@ -180,6 +180,11 @@ class UkRailCard extends HTMLElement {
     return this._hass.states[entityId]?.state ?? '';
   }
 
+  private isEntityOn(entityId?: string): boolean {
+    const state = this.getEntityState(entityId).toLowerCase();
+    return state === 'on' || state === 'true';
+  }
+
   private render(): void {
     if (!this.shadowRoot || !this._config || !this._hass) {
       return;
@@ -201,6 +206,7 @@ class UkRailCard extends HTMLElement {
       scheduled: string;
       destination: string;
       estimated: string;
+      status: 'cancelled' | 'delayed' | 'normal';
     }> = [];
 
     for (let index = 1; index <= maxServices; index += 1) {
@@ -220,11 +226,25 @@ class UkRailCard extends HTMLElement {
       const estimatedId =
         this.findEntityId(`_${index}_estimated_time`) ||
         this.findEntityId(`${index}_estimated_time`);
+      const cancelledId =
+        this.findEntityId(`_${index}_cancelled`) ||
+        this.findEntityId(`${index}_cancelled`);
+      const delayedId =
+        this.findEntityId(`_${index}_delayed`) ||
+        this.findEntityId(`${index}_delayed`);
+
+      let status: 'cancelled' | 'delayed' | 'normal' = 'normal';
+      if (this.isEntityOn(cancelledId)) {
+        status = 'cancelled';
+      } else if (this.isEntityOn(delayedId)) {
+        status = 'delayed';
+      }
 
       rows.push({
         scheduled: this.getEntityState(scheduledId) || '-',
         destination,
         estimated: this.getEntityState(estimatedId) || '-',
+        status,
       });
     }
 
@@ -271,6 +291,14 @@ class UkRailCard extends HTMLElement {
         .row {
           display: contents;
           font-size: 0.95rem;
+        }
+
+        .row.is-cancelled .cell {
+          color: var(--error-color);
+        }
+
+        .row.is-delayed .cell {
+          color: var(--warning-color);
         }
 
         .cell {
@@ -320,7 +348,13 @@ class UkRailCard extends HTMLElement {
                 ${rows
                   .map(
                     (row) => `
-                      <div class="row">
+                      <div class="row ${
+                        row.status === 'cancelled'
+                          ? 'is-cancelled'
+                          : row.status === 'delayed'
+                            ? 'is-delayed'
+                            : ''
+                      }">
                         <div class="cell">${row.scheduled}</div>
                         <div class="cell">${row.destination}</div>
                         <div class="cell">${row.estimated}</div>
