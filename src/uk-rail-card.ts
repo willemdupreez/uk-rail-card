@@ -207,6 +207,8 @@ class UkRailCard extends HTMLElement {
       destination: string;
       estimated: string;
       status: 'cancelled' | 'delayed' | 'normal';
+      type: string;
+      isReplacement: boolean;
     }> = [];
 
     for (let index = 1; index <= maxServices; index += 1) {
@@ -232,6 +234,9 @@ class UkRailCard extends HTMLElement {
       const delayedId =
         this.findEntityId(`_${index}_delayed`) ||
         this.findEntityId(`${index}_delayed`);
+      const typeId =
+        this.findEntityId(`_${index}_type`) ||
+        this.findEntityId(`${index}_type`);
 
       let status: 'cancelled' | 'delayed' | 'normal' = 'normal';
       if (this.isEntityOn(cancelledId)) {
@@ -240,11 +245,16 @@ class UkRailCard extends HTMLElement {
         status = 'delayed';
       }
 
+      const type = this.getEntityState(typeId).trim();
+      const isReplacement = Boolean(type) && type !== 'train';
+
       rows.push({
         scheduled: this.getEntityState(scheduledId) || '-',
         destination,
         estimated: this.getEntityState(estimatedId) || '-',
         status,
+        type,
+        isReplacement,
       });
     }
 
@@ -301,9 +311,25 @@ class UkRailCard extends HTMLElement {
           color: var(--warning-color);
         }
 
+        .row.is-replacement .cell {
+          color: var(--error-color);
+        }
+
         .cell {
           padding: 4px 0;
           border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+        }
+
+        .destination {
+          display: flex;
+          flex-direction: column;
+          gap: 2px;
+        }
+
+        .subtext {
+          font-size: 0.8rem;
+          color: inherit;
+          opacity: 0.9;
         }
 
         .row:last-of-type .cell {
@@ -353,10 +379,19 @@ class UkRailCard extends HTMLElement {
                           ? 'is-cancelled'
                           : row.status === 'delayed'
                             ? 'is-delayed'
-                            : ''
+                            : row.isReplacement
+                              ? 'is-replacement'
+                              : ''
                       }">
                         <div class="cell">${row.scheduled}</div>
-                        <div class="cell">${row.destination}</div>
+                        <div class="cell destination">
+                          <div>${row.destination}</div>
+                          ${
+                            row.isReplacement
+                              ? `<div class="subtext">A ${row.type} replacement service is in place.</div>`
+                              : ''
+                          }
+                        </div>
                         <div class="cell">${row.estimated}</div>
                       </div>
                     `

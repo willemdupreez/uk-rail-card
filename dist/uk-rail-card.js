@@ -1,5 +1,5 @@
 var _a;
-const version = '0.2.41';
+const version = '0.2.42';
 console.info('%c UK-RAIL-CARD %c v'.concat(version, ' '), 'color: white; background: navy; font-weight: 700;', 'color: navy; background: white; font-weight: 700;');
 class UkRailCard extends HTMLElement {
     constructor() {
@@ -147,6 +147,8 @@ class UkRailCard extends HTMLElement {
                 this.findEntityId(`${index}_cancelled`);
             const delayedId = this.findEntityId(`_${index}_delayed`) ||
                 this.findEntityId(`${index}_delayed`);
+            const typeId = this.findEntityId(`_${index}_type`) ||
+                this.findEntityId(`${index}_type`);
             let status = 'normal';
             if (this.isEntityOn(cancelledId)) {
                 status = 'cancelled';
@@ -154,11 +156,15 @@ class UkRailCard extends HTMLElement {
             else if (this.isEntityOn(delayedId)) {
                 status = 'delayed';
             }
+            const type = this.getEntityState(typeId).trim();
+            const isReplacement = Boolean(type) && type !== 'train';
             rows.push({
                 scheduled: this.getEntityState(scheduledId) || '-',
                 destination,
                 estimated: this.getEntityState(estimatedId) || '-',
                 status,
+                type,
+                isReplacement,
             });
         }
         const title = ((_a = this._config.title) === null || _a === void 0 ? void 0 : _a.trim()) || this.getDeviceName();
@@ -213,9 +219,25 @@ class UkRailCard extends HTMLElement {
           color: var(--warning-color);
         }
 
+        .row.is-replacement .cell {
+          color: var(--error-color);
+        }
+
         .cell {
           padding: 4px 0;
           border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+        }
+
+        .destination {
+          display: flex;
+          flex-direction: column;
+          gap: 2px;
+        }
+
+        .subtext {
+          font-size: 0.8rem;
+          color: inherit;
+          opacity: 0.9;
         }
 
         .row:last-of-type .cell {
@@ -258,9 +280,16 @@ class UkRailCard extends HTMLElement {
                 ? 'is-cancelled'
                 : row.status === 'delayed'
                     ? 'is-delayed'
-                    : ''}">
+                    : row.isReplacement
+                        ? 'is-replacement'
+                        : ''}">
                         <div class="cell">${row.scheduled}</div>
-                        <div class="cell">${row.destination}</div>
+                        <div class="cell destination">
+                          <div>${row.destination}</div>
+                          ${row.isReplacement
+                ? `<div class="subtext">A ${row.type} replacement service is in place.</div>`
+                : ''}
+                        </div>
                         <div class="cell">${row.estimated}</div>
                       </div>
                     `)
