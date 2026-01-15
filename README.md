@@ -19,28 +19,45 @@ resources:
 ```yaml
 type: custom:uk-rail-card
 title: London Departures
-device: rail_station
+device_id: 1234567890abcdef
 ```
 
 ### Required
 
-- `device`: suffix used to find entity IDs.
+- `device_id`: device selected in the editor; entity lookups are limited to this
+  device.
 
 ### Optional
 
 - `title`: card title shown in the header.
-- `device_id`: optional device used by the visual editor to derive the device suffix; when set, entity lookups are limited to that device.
 
 ## Entity naming
 
-The card looks for entities that end with these suffixes:
+The card looks for entities on the selected device that end with these suffixes:
 
-- `${device}_max_services`
-- `${device}_<index>_scheduled_time`
-- `${device}_<index>_destination`
-- `${device}_<index>_estimated_time`
+- `*_max_services`
+- `*_<index>_scheduled_time`
+- `*_<index>_destination`
+- `*_<index>_estimated_time`
 
 If a `destination` value is blank, the card stops rendering further rows.
+
+## Visibility
+
+Home Assistant visibility conditions are configured on the dashboard, not inside
+the card. If you want the card to show only when the rail2mqtt polling entity is
+active, wrap it in a conditional card:
+
+```yaml
+type: conditional
+conditions:
+  - entity: sensor.rail_station_polling_active
+    state: "on"
+card:
+  type: custom:uk-rail-card
+  title: London Departures
+  device_id: 1234567890abcdef
+```
 
 ## Development
 

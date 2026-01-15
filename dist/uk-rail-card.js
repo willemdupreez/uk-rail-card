@@ -1,5 +1,5 @@
 var _a;
-const version = '0.2.39';
+const version = '0.2.40';
 console.info('%c UK-RAIL-CARD %c v'.concat(version, ' '), 'color: white; background: navy; font-weight: 700;', 'color: navy; background: white; font-weight: 700;');
 class UkRailCard extends HTMLElement {
     constructor() {
@@ -12,15 +12,15 @@ class UkRailCard extends HTMLElement {
         return {
             type: 'custom:uk-rail-card',
             title: 'Rail Services',
-            device: 'rail_station',
+            device_id: '',
         };
     }
     static getConfigElement() {
         return document.createElement('uk-rail-card-editor');
     }
     setConfig(config) {
-        if (!config.device) {
-            throw new Error('You must define a device');
+        if (!config.device_id) {
+            throw new Error('You must define a device_id');
         }
         this._config = config;
         void this.loadEntityRegistry();
@@ -119,12 +119,9 @@ class UkRailCard extends HTMLElement {
         if (!this.shadowRoot || !this._config || !this._hass) {
             return;
         }
-        const deviceSuffix = this._config.device;
-        const maxEntityId = this.findEntityId(`${deviceSuffix}_max_services`) ||
-            this.findEntityId('max_services');
+        const maxEntityId = this.findEntityId('_max_services') || this.findEntityId('max_services');
         const maxServices = Number(this.getEntityState(maxEntityId)) || 0;
-        const lastUpdatedEntityId = this.findEntityId(`${deviceSuffix}_last_updated`) ||
-            this.findEntityId('last_updated');
+        const lastUpdatedEntityId = this.findEntityId('_last_updated') || this.findEntityId('last_updated');
         const lastUpdated = this.getEntityState(lastUpdatedEntityId);
         const lastUpdatedDate = lastUpdated ? new Date(lastUpdated) : null;
         const lastUpdatedIso = lastUpdatedDate && !Number.isNaN(lastUpdatedDate.getTime())
@@ -132,15 +129,15 @@ class UkRailCard extends HTMLElement {
             : '';
         const rows = [];
         for (let index = 1; index <= maxServices; index += 1) {
-            const destinationId = this.findEntityId(`${deviceSuffix}_${index}_destination`) ||
+            const destinationId = this.findEntityId(`_${index}_destination`) ||
                 this.findEntityId(`${index}_destination`);
             const destination = this.getEntityState(destinationId).trim();
             if (!destination) {
                 break;
             }
-            const scheduledId = this.findEntityId(`${deviceSuffix}_${index}_scheduled_time`) ||
+            const scheduledId = this.findEntityId(`_${index}_scheduled_time`) ||
                 this.findEntityId(`${index}_scheduled_time`);
-            const estimatedId = this.findEntityId(`${deviceSuffix}_${index}_estimated_time`) ||
+            const estimatedId = this.findEntityId(`_${index}_estimated_time`) ||
                 this.findEntityId(`${index}_estimated_time`);
             rows.push({
                 scheduled: this.getEntityState(scheduledId) || '-',
@@ -257,7 +254,6 @@ class UkRailCard extends HTMLElement {
 class UkRailCardEditor extends HTMLElement {
     constructor() {
         super();
-        this._entitiesLoaded = false;
         this.attachShadow({ mode: 'open' });
     }
     setConfig(config) {
@@ -266,7 +262,6 @@ class UkRailCardEditor extends HTMLElement {
     }
     set hass(hass) {
         this._hass = hass;
-        void this.loadEntities();
         this.render();
     }
     updateConfigValue(key, value) {
@@ -281,10 +276,6 @@ class UkRailCardEditor extends HTMLElement {
             else {
                 delete nextConfig.title;
             }
-        }
-        else if (key === 'device') {
-            const trimmed = value.trim();
-            nextConfig.device = trimmed;
         }
         else if (key === 'device_id') {
             const trimmed = value.trim();
@@ -305,21 +296,6 @@ class UkRailCardEditor extends HTMLElement {
             composed: true,
         }));
     }
-    async loadEntities() {
-        var _a;
-        if (this._entitiesLoaded || !((_a = this._hass) === null || _a === void 0 ? void 0 : _a.callWS)) {
-            return;
-        }
-        this._entitiesLoaded = true;
-        try {
-            this._entities = await this._hass.callWS({
-                type: 'config/entity_registry/list',
-            });
-        }
-        catch {
-            this._entities = [];
-        }
-    }
     updateFormData(form) {
         var _a, _b, _c, _d;
         const nextData = {
@@ -333,50 +309,17 @@ class UkRailCardEditor extends HTMLElement {
         }
         form.data = nextData;
     }
-    deriveDeviceSuffix(entityId) {
-        var _a;
-        const entityName = (_a = entityId.split('.')[1]) !== null && _a !== void 0 ? _a : '';
-        if (entityName.endsWith('_max_services')) {
-            return entityName.replace(/_max_services$/, '');
-        }
-        const match = entityName.match(/^(.*)_\d+_(scheduled_time|destination|estimated_time)$/);
-        if (match) {
-            return match[1];
-        }
-        return entityName;
-    }
-    pickEntityIdForDevice(deviceId) {
-        var _a;
-        const entities = ((_a = this._entities) !== null && _a !== void 0 ? _a : []).filter((entity) => entity.device_id === deviceId);
-        const entityIds = entities.map((entity) => entity.entity_id);
-        const maxServices = entityIds.find((entityId) => { var _a; return ((_a = entityId.split('.')[1]) !== null && _a !== void 0 ? _a : '').endsWith('_max_services'); });
-        if (maxServices) {
-            return maxServices;
-        }
-        const matching = entityIds.find((entityId) => {
-            var _a;
-            return /^(.*)_\d+_(scheduled_time|destination|estimated_time)$/.test((_a = entityId.split('.')[1]) !== null && _a !== void 0 ? _a : '');
-        });
-        return matching !== null && matching !== void 0 ? matching : entityIds[0];
-    }
     updateDeviceFromDevice(deviceId) {
         if (!this._config) {
             return;
         }
         const trimmed = deviceId.trim();
-        if (trimmed && !this._entitiesLoaded) {
-            void this.loadEntities().then(() => this.updateDeviceFromDevice(trimmed));
-            return;
-        }
         const nextConfig = { ...this._config };
         if (trimmed) {
             nextConfig.device_id = trimmed;
-            const entityId = this.pickEntityIdForDevice(trimmed);
-            nextConfig.device = entityId ? this.deriveDeviceSuffix(entityId) : '';
         }
         else {
             delete nextConfig.device_id;
-            nextConfig.device = '';
         }
         this._config = nextConfig;
         this.dispatchEvent(new CustomEvent('config-changed', {
@@ -408,6 +351,7 @@ class UkRailCardEditor extends HTMLElement {
             { name: 'title', selector: { text: {} } },
             {
                 name: 'device_id',
+                required: true,
                 selector: {
                     device: { manufacturer: 'rail2mqtt', model: 'Departure Board' },
                 },
