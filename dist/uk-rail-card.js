@@ -1,5 +1,5 @@
 var _a;
-const version = '0.2.42';
+const version = '0.2.43';
 console.info('%c UK-RAIL-CARD %c v'.concat(version, ' '), 'color: white; background: navy; font-weight: 700;', 'color: navy; background: white; font-weight: 700;');
 class UkRailCard extends HTMLElement {
     constructor() {
