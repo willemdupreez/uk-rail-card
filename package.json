@@ -9,8 +9,7 @@
     "bump": "npm version --no-git-tag-version patch",
     "build": "rollup -c",
     "watch": "rollup -c -w",
-    "prepublish": "npm run bump && npm run build",
-    "publish": "git add . && git commit -am 'Development' && git tag $npm_package_version && git push --tags"
+    "publish": "git add . && git commit -am 'Development' && git tag 'v$npm_package_version' && git push --tags"
   },
   "devDependencies": {
     "@rollup/plugin-json": "^6.1.0",
