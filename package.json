@@ -1,6 +1,6 @@
 {
   "name": "uk-rail-card",
-  "version": "0.2.55",
+  "version": "0.2.56",
   "description": "Custom Lovelace card for UK rail service boards.",
   "license": "MIT",
   "type": "module",
@@ -9,7 +9,8 @@
     "bump": "npm version --no-git-tag-version patch",
     "build": "rollup -c",
     "watch": "rollup -c -w",
-    "publish": "git add . && git commit -am 'Development' && git tag \"v$npm_package_version\" && git push --tags"
+    "publish": "git add . && git commit -am 'Development' && git tag \"v$npm_package_version\" && git push --tags",
+    "release": "gh release create \"v$npm_package_version\" --generate-notes"
   },
   "devDependencies": {
     "@rollup/plugin-json": "^6.1.0",
