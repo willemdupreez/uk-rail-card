@@ -9,7 +9,7 @@
     "bump": "npm version --no-git-tag-version patch",
     "build": "rollup -c",
     "watch": "rollup -c -w",
-    "publish": "git add . && git commit -am 'Development' && git tag \"v$npm_package_version\" && git push --tags",
+    "publish": "git add . && git commit -am \"${npm_config_comment:-default}\" && git tag \"v$npm_package_version\" && git push --tags",
     "release": "gh release create \"v$npm_package_version\" --generate-notes"
   },
   "devDependencies": {
