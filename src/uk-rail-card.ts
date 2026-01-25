@@ -185,6 +185,14 @@ class UkRailCard extends HTMLElement {
     return state === 'on' || state === 'true';
   }
 
+  private capitalize(text: string): string {
+    if (!text) {
+      return text;
+    }
+
+    return text.charAt(0).toUpperCase() + text.slice(1);
+  }
+
   private render(): void {
     if (!this.shadowRoot || !this._config || !this._hass) {
       return;
@@ -388,7 +396,7 @@ class UkRailCard extends HTMLElement {
                           <div>${row.destination}</div>
                           ${
                             row.isReplacement
-                              ? `<div class="subtext">A ${row.type} replacement service is in place.</div>`
+                              ? `<div class="subtext">${this.capitalize(row.type)} replacement service.</div>`
                               : ''
                           }
                         </div>

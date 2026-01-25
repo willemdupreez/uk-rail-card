@@ -1,5 +1,5 @@
 var _a;
-const version = '0.2.47';
+const version = '0.2.49';
 console.info('%c UK-RAIL-CARD %c v'.concat(version, ' '), 'color: white; background: navy; font-weight: 700;', 'color: navy; background: white; font-weight: 700;');
 class UkRailCard extends HTMLElement {
     constructor() {
@@ -117,6 +117,12 @@ class UkRailCard extends HTMLElement {
     isEntityOn(entityId) {
         const state = this.getEntityState(entityId).toLowerCase();
         return state === 'on' || state === 'true';
+    }
+    capitalize(text) {
+        if (!text) {
+            return text;
+        }
+        return text.charAt(0).toUpperCase() + text.slice(1);
     }
     render() {
         var _a;
@@ -287,7 +293,7 @@ class UkRailCard extends HTMLElement {
                         <div class="cell destination">
                           <div>${row.destination}</div>
                           ${row.isReplacement
-                ? `<div class="subtext">A ${row.type} replacement service is in place.</div>`
+                ? `<div class="subtext">${this.capitalize(row.type)} replacement service.</div>`
                 : ''}
                         </div>
                         <div class="cell">${row.estimated}</div>
