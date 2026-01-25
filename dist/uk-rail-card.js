@@ -1,5 +1,5 @@
 var _a;
-const version = '0.2.43';
+const version = '0.2.47';
 console.info('%c UK-RAIL-CARD %c v'.concat(version, ' '), 'color: white; background: navy; font-weight: 700;', 'color: navy; background: white; font-weight: 700;');
 class UkRailCard extends HTMLElement {
     constructor() {
@@ -139,10 +139,10 @@ class UkRailCard extends HTMLElement {
             if (!destination) {
                 break;
             }
-            const scheduledId = this.findEntityId(`_${index}_scheduled_time`) ||
-                this.findEntityId(`${index}_scheduled_time`);
-            const estimatedId = this.findEntityId(`_${index}_estimated_time`) ||
-                this.findEntityId(`${index}_estimated_time`);
+            const scheduledId = this.findEntityId(`_${index}_scheduled`) ||
+                this.findEntityId(`${index}_scheduled`);
+            const estimatedId = this.findEntityId(`_${index}_estimated`) ||
+                this.findEntityId(`${index}_estimated`);
             const cancelledId = this.findEntityId(`_${index}_cancelled`) ||
                 this.findEntityId(`${index}_cancelled`);
             const delayedId = this.findEntityId(`_${index}_delayed`) ||

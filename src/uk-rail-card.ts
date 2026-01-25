@@ -28,7 +28,7 @@ const version = '__VERSION__';
 console.info(
   '%c UK-RAIL-CARD %c v'.concat(version, ' '),
   'color: white; background: navy; font-weight: 700;',
-  'color: navy; background: white; font-weight: 700;'
+  'color: navy; background: white; font-weight: 700;',
 );
 
 class UkRailCard extends HTMLElement {
@@ -135,7 +135,7 @@ class UkRailCard extends HTMLElement {
     }
 
     const device = (this._deviceRegistry ?? []).find(
-      (entry) => entry.id === deviceId
+      (entry) => entry.id === deviceId,
     );
     const name = device?.name_by_user || device?.name || '';
 
@@ -159,11 +159,11 @@ class UkRailCard extends HTMLElement {
       }
 
       const deviceEntities = (this._entityRegistry ?? []).filter(
-        (entity) => entity.device_id === this._config?.device_id
+        (entity) => entity.device_id === this._config?.device_id,
       );
       const deviceEntityIds = deviceEntities.map((entity) => entity.entity_id);
       const scopedIds = entityIds.filter((entityId) =>
-        deviceEntityIds.includes(entityId)
+        deviceEntityIds.includes(entityId),
       );
 
       return scopedIds.find((entityId) => entityId.endsWith(suffix));
@@ -223,11 +223,11 @@ class UkRailCard extends HTMLElement {
       }
 
       const scheduledId =
-        this.findEntityId(`_${index}_scheduled_time`) ||
-        this.findEntityId(`${index}_scheduled_time`);
+        this.findEntityId(`_${index}_scheduled`) ||
+        this.findEntityId(`${index}_scheduled`);
       const estimatedId =
-        this.findEntityId(`_${index}_estimated_time`) ||
-        this.findEntityId(`${index}_estimated_time`);
+        this.findEntityId(`_${index}_estimated`) ||
+        this.findEntityId(`${index}_estimated`);
       const cancelledId =
         this.findEntityId(`_${index}_cancelled`) ||
         this.findEntityId(`${index}_cancelled`);
@@ -394,7 +394,7 @@ class UkRailCard extends HTMLElement {
                         </div>
                         <div class="cell">${row.estimated}</div>
                       </div>
-                    `
+                    `,
                   )
                   .join('')}
               </div>
@@ -465,12 +465,12 @@ class UkRailCardEditor extends HTMLElement {
         detail: { config: nextConfig },
         bubbles: true,
         composed: true,
-      })
+      }),
     );
   }
 
   private updateFormData(
-    form: HTMLElement & { data?: Record<string, unknown> }
+    form: HTMLElement & { data?: Record<string, unknown> },
   ) {
     const nextData = {
       title: this._config?.title ?? '',
@@ -511,7 +511,7 @@ class UkRailCardEditor extends HTMLElement {
         detail: { config: nextConfig },
         bubbles: true,
         composed: true,
-      })
+      }),
     );
   }
 

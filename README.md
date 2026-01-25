@@ -36,9 +36,9 @@ device_id: 1234567890abcdef
 The card looks for entities on the selected device that end with these suffixes:
 
 - `*_max_services`
-- `*_<index>_scheduled_time`
+- `*_<index>_scheduled`
 - `*_<index>_destination`
-- `*_<index>_estimated_time`
+- `*_<index>_estimated`
 
 If a `destination` value is blank, the card stops rendering further rows.
 

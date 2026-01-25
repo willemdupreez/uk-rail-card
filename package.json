@@ -1,21 +1,24 @@
 {
   "name": "uk-rail-card",
-  "version": "0.2.43",
+  "version": "0.2.47",
   "description": "Custom Lovelace card for UK rail service boards.",
   "license": "MIT",
   "type": "module",
   "main": "dist/uk-rail-card.js",
   "scripts": {
+    "bump": "npm version --no-git-tag-version patch",
     "build": "rollup -c",
-    "watch": "rollup -c -w"
+    "watch": "rollup -c -w",
+    "prepublish": "npm run bump && npm run build",
+    "publish": "git add . && git commit -am 'Development' && git push"
   },
   "devDependencies": {
     "@rollup/plugin-json": "^6.1.0",
-    "@rollup/plugin-node-resolve": "^15.2.3",
-    "@rollup/plugin-replace": "^5.0.5",
-    "@rollup/plugin-typescript": "^11.1.6",
-    "rollup": "^4.21.0",
-    "tslib": "^2.6.3",
-    "typescript": "^5.5.4"
+    "@rollup/plugin-node-resolve": "^16.0.3",
+    "@rollup/plugin-replace": "^6.0.3",
+    "@rollup/plugin-typescript": "^12.3.0",
+    "rollup": "^4.56.0",
+    "tslib": "^2.8.1",
+    "typescript": "^5.9.3"
   }
 }
