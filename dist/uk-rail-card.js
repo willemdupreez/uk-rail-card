@@ -1,5 +1,5 @@
 var _a;
-const version = '0.2.53';
+const version = '0.2.54';
 console.info('%c UK-RAIL-CARD %c v'.concat(version, ' '), 'color: white; background: navy; font-weight: 700;', 'color: navy; background: white; font-weight: 700;');
 class UkRailCard extends HTMLElement {
     constructor() {
@@ -293,7 +293,7 @@ class UkRailCard extends HTMLElement {
                         <div class="cell destination">
                           <div>${row.destination}</div>
                           ${row.isReplacement
-                ? `<div class="subtext">${this.capitalize(row.type)} replacement service.</div>`
+                ? `<div class="subtext">${this.capitalize(row.type)} replacement service</div>`
                 : ''}
                         </div>
                         <div class="cell">${row.estimated}</div>

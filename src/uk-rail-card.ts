@@ -396,7 +396,7 @@ class UkRailCard extends HTMLElement {
                           <div>${row.destination}</div>
                           ${
                             row.isReplacement
-                              ? `<div class="subtext">${this.capitalize(row.type)} replacement service.</div>`
+                              ? `<div class="subtext">${this.capitalize(row.type)} replacement service</div>`
                               : ''
                           }
                         </div>
